@@ -1,0 +1,6 @@
+LOG FILE FOR 2tick+1-INDEV INSTANCE RAN ON: Fri Jul  6 04:03:51 2018
+
+Error: unable to open file: config//keybinds.ini
+Error, key: left has no value
+Error, key: left has no value
+scan codes loaded, parsed and updated
