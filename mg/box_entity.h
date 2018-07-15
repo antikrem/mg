@@ -35,8 +35,6 @@ protected:
 	float alpha = (float)255;
 	float alphaGrowth = 0;
 
-	float hitBox = 0;
-
 	float internalScale = 0;
 	bool animationPlayed = false;
 	int currentNumberFrame = 0;
@@ -68,10 +66,6 @@ public:
 	float getAngle();
 
 	int getTotalFrames();
-
-	void setHitBox(float newSize);
-
-	float getHitBox();
 
 	void setFlag(bool flag);
 

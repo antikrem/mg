@@ -1,108 +1,80 @@
-#ifndef __MENU_H_INCLUDED__
-#define __MENU_H_INCLUDED__
+/*Classess to run menus.
+To be used with _controller.cpp*/
+#ifndef __MENU_H__
+#define __MENU_H__
 
-#include <atomic>
-#include <chrono>
+#include "background.h"
+#include "_slave_class.h"
+#include "_interactives.h"
 
-#include "sdl.h"
-#include "level_enum.h"
-#include "error.h"
-#include "input.h"
-#include "graphics_state.h"
-using namespace std;
+void but1(LevelSettings* currentSettings) {
+	err::logMessage("but 1 pressed");
+	currentSettings->buttonFlag = titleToMenu;
+}
 
-/*A SlaveInstance is a abstract object representing a section that can be controlled, like a level or menu
-It can be overrided to change what the instance does*/
-class SlaveInstance {
+void but2(LevelSettings* currentSettings) {
+	err::logMessage("but 2 pressed");
+	cout << currentSettings->lives << endl;
+}
+
+class TitleMenu : public SlaveInstance {
 private:
-	//Graphics environment
-	GraphicsState* graphicsState;
-	//Level state information
-	LevelSettings* currentSettings = NULL;
+	BackgroundManager* backgroundManager = NULL;
+	ButtonManager* opener = NULL;
 
-	//Thread control variables
-	atomic<bool> endSlave = false;
-	atomic<bool> computerActive = true;
-	atomic<bool> rendererActive = true;
+	void initialise() {
+		backgroundManager = new BackgroundManager();
+		backgroundManager->initialiseBackgroundManager(graphicsState->getGRenderer(), currentSettings);
+		backgroundManager->forceBackgroundTable();
 
-	//thread safe input interface, recall Input is trivially defined
-	atomic<Input> safeInput;
-
-	//Safely get current input
-	Input getInput() {
-		return(safeInput.load());
+		opener = new ButtonManager(textRenderer, gold, sans36);
+		opener->addButton("MEME", { 100, 200, 200, 36 }, but1 );
+		opener->addButton("DREAM", { 100, 500, 200, 36 }, but2);
+		opener->activate(150);
 	}
 
-//LOGIC AND RENDERING FUNCTIONS//
-	
-	/*Logic to be conducted 300 times a second. Handled by computer()
-	Needs to be over written*/
-	virtual void computeCycle() {
-	//	err::logMessage("computeCycle() not overwritten");
+	void memFree() {
+		delete backgroundManager;
+		delete opener;
 	}
 
-	/*Logic to be conducted with no upper limit per second. Handled by renderer()
-	Needs to be over written*/
-	virtual void renderCycle() {
-	//	err::logMessage("renderCycle() not overwritten");
-	}
+	void computeCycle() {
+		opener->lock();
+		opener->update( getInput(), currentSettings );
+		opener->unlock();
 
-public:
-	/*Kills thread, memory is retained, delete when readyToFree() is true*/
-	void killThreads() {
-		endSlave = true;
-	}
+		SharedEnityList<ListedEntity> list;
+		ListedEntity* meme = new ListedEntity();
 
-	/*If true, safe to delete*/
-	bool readyToFree() {
-		return (!rendererActive && !computerActive);
-	}
+		list.pushObject(meme);
+		cout << list.size();
+		meme->setFlag(false);
+		list.cleanDeathFlags();
+		cout << list.size();
 
-	/*This function will be called as a seperate thread and then disjoint, and handles game logic (e.g.) 300 tiems
-	a second.
-	Ends when endSlave is true (when killThreads() is envoked), and flip computerActive to false*/
-	void computer() {
-		chrono::high_resolution_clock::time_point startCyclePoint;
-		chrono::high_resolution_clock::time_point currentCyclePoint;
-		int cycle = 0;
-		while (!endSlave) {
-			startCyclePoint = chrono::high_resolution_clock::now();
-
-			computeCycle();
-
-			unsigned int i;
-			do {
-				currentCyclePoint = chrono::high_resolution_clock::now();
-				i = (unsigned int) (chrono::duration_cast<std::chrono::microseconds>(currentCyclePoint - startCyclePoint)).count();
-				if (i >= 3333) {
-			//		err::logMessage(to_string(i));
-				}
-			} while ( i < 3333 );
+		if (currentSettings->buttonFlag == titleToMenu) {
+			currentSettings->buttonFlag.store(none);
+			currentSettings->level = 1;
+			currentSettings->nextStage = inGame;
+			currentSettings->endLevel = true;
 		}
-
-		computerActive = false;
 	}
 
-	/*This function will be called as a seperate thread and then disjoint, and handles graphics (e.g.) at
-	an unlocked clock speed.
-	Ends when endSlave is true (when killThreads() is envoked), and flip rendererActive to false*/
-	void renderer() {
-		while (!endSlave) {
-			renderCycle();
+	void renderCycle() {
+		backgroundManager->lock();
+		backgroundManager->readyBackgroundTable();
+
+		BackRender temp;
+		SDL_Rect tempRect;
+		while (backgroundManager->remainingBackgroundTable()) {
+			temp = backgroundManager->getABackground();
+			tempRect = temp.dest;
+			SDL_RenderCopy(graphicsState->getGRenderer(), temp.texture, NULL, &tempRect);
 		}
+		backgroundManager->unlock();
 
-		rendererActive = false;
+		opener->render();
 	}
-
-	/*Initialises values required for rendering and other neccessary things*/
-	void initialiseInstance(GraphicsState* graphicsState, LevelSettings* currentSettings) {
-		this->graphicsState = graphicsState;
-		this->currentSettings = currentSettings;
-	}
-
-	void setCurrentInput(Input newInput) {
-		safeInput.store(newInput);
-	}
-
 };
+
 #endif

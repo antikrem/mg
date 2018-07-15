@@ -1,8 +1,9 @@
 #ifndef __BACKGROUND_H__
 #define __BACKGROUND_H__
 
-typedef map<int, SDL_Texture*> mt_backgroundImage;
-typedef map<int, float> mt_float;
+#include "SDL.h"
+#include "thread_safe.h"
+#include <map>
 
 //total backgrounds able to be rendered at a time
 const int MAX_BACKGROUND_TABLE = 6;
@@ -18,17 +19,17 @@ struct BackRender {
 
 /*Stores and manages BackRenders being drawn.
 Loads background tiles based on clock*/
-class BackgroundManager {
+class BackgroundManager : public ThreadSafe {
 private:
 	int internalCounter = 0;
 
-	mt_backgroundImage backgroundSchedule;
+	map<int, SDL_Texture*> backgroundSchedule;
 	BackRender backgroundTable[MAX_BACKGROUND_TABLE];
 	SDL_Texture* currentBackground = NULL;
 
 	float scrollSpeed = (float)1;
-	mt_float speedTable;
-	mt_float shiftTable;
+	map<int, float> speedTable;
+	map<int, float> shiftTable;
 	float currentShift = (float)3;
 
 	int getFreeBackgroundSpace();
@@ -46,7 +47,7 @@ public:
 
 	~BackgroundManager();
 
-	void initialiseBackgroundManager(SDL_Renderer* RENDERER, LevelSettings levelSet);
+	void initialiseBackgroundManager(SDL_Renderer* RENDERER, LevelSettings* levelSet);
 
 	void primeBackgroundTable();
 

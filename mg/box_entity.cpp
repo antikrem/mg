@@ -119,14 +119,6 @@ int BoxEntity::getTotalFrames() {
 	return animationSet->getAnimation(currentFrameType)->getTotalFrames();
 }
 
-void BoxEntity::setHitBox(float newSize) {
-	hitBox = newSize;
-}
-
-float BoxEntity::getHitBox() {
-	return hitBox;
-}
-
 void BoxEntity::setFlag(bool flag) {
 	this->flag = flag;
 }

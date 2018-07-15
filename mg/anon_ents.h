@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "box_entity.h"
+#include "graphics_state.h"
 
 #include <iostream>
 
@@ -15,7 +16,7 @@ private:
 	bool abovePlayerBullets = false;
 
 public:
-	AnonEnt(string name, AnimationStore* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets);
+	AnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets);
 
 	bool getAbovePlayerBullets();
 
@@ -31,7 +32,7 @@ protected:
 	vector< AnonEnt* > toPush;
 	vector< shared_ptr<AnonEnt> > pushed;
 
-	void addAnonEnt(string name, AnimationStore* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets = false);
+	void addAnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets = false);
 
 	/*overwrite to update each anon ent every cycle please god do it*/
 	virtual void updateAnonEnt();

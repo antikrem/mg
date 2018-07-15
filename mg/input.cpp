@@ -52,3 +52,7 @@ void updateScanCodes(KeyBind* keyBind) {
 
 	err::logMessage("Scan Codes loaded, parsed and updated");
 }
+
+bool Input::buttonPressed() {
+	return (up || down || left || right || shift || dash || shoot || special || enter || esc);
+}

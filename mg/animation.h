@@ -7,15 +7,7 @@
 #include "sdl.h"
 #include "error.h"
 
-/*Enumeration of different animations avalible as index
-*/
-enum AnimationType {
-	spawn,
-	idle,
-	move_left,
-	move_right,
-	death
-};
+
 
 
 using namespace std;

@@ -115,8 +115,8 @@ BackgroundManager::~BackgroundManager() {
 	}
 }
 
-void BackgroundManager::initialiseBackgroundManager(SDL_Renderer* RENDERER, LevelSettings levelSet) {
-	int level = levelSet.level;
+void BackgroundManager::initialiseBackgroundManager(SDL_Renderer* RENDERER, LevelSettings* levelSet) {
+	int level = levelSet->level;
 
 	string filePath = "levels\\";
 	filePath.append(to_string(level));

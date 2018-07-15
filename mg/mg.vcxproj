@@ -70,12 +70,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -86,7 +86,7 @@
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -111,7 +111,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -143,8 +143,14 @@
     <ClInclude Include="graphics_state.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="level_enum.h" />
+    <ClInclude Include="listed_entities.h" />
+    <ClInclude Include="thread_safe.h" />
     <ClInclude Include="str_kit.h" />
+    <ClInclude Include="text_entity.h" />
+    <ClInclude Include="_interactives.h" />
+    <ClInclude Include="_level.h" />
     <ClInclude Include="_menu.h" />
+    <ClInclude Include="_slave_class.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="animation.cpp" />
@@ -156,7 +162,17 @@
     <ClCompile Include="dict.cpp" />
     <ClCompile Include="error.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="thread_safe.cpp" />
     <ClCompile Include="_controller.cpp" />
+    <ClCompile Include="_slave_class.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="log.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config\engine_settings.ini" />
+    <None Include="config\gfx_settings.ini" />
+    <None Include="config\keybinds.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

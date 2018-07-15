@@ -60,7 +60,15 @@ string Dictionary::byKey(string key, bool suppressError) {
 }
 
 int  Dictionary::byIntKey(string key) {
-	return stoi( this->byKey(key) );
+	try {
+		return stoi(this->byKey(key));
+	}
+	catch (const std::exception & ex) {
+		ex.what();
+		err::logMessage("ERROR: entry for " + key + " in " + filePath + " is invalid, rectify input, verify files or reinstall");
+		return 0;
+	}
+	
 }
 
 void Dictionary::toReport() {

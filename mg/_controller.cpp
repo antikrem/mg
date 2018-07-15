@@ -1,5 +1,6 @@
 #include "error.h"
 #include "_menu.h"
+#include "_level.h"
 
 #include <iostream>
 #include <thread>
@@ -26,11 +27,15 @@ Input catchInput(KeyBind* keyBind) {
 }
 
 int main(int argc, char* args[]) {
+
+	SDL_Init(SDL_INIT_EVERYTHING);
+	TTF_Init();
 	
 	//If true, game is in play, else end
 	bool gameState = true;
 
 	GraphicsState* graphicsState = new GraphicsState();
+	TextRenderer* textRenderer = new TextRenderer(graphicsState);
 
 	err::primeErrorFile();
 	
@@ -54,8 +59,12 @@ int main(int argc, char* args[]) {
 		if (currentState == NULL) {
 			switch (levelSettings->nextStage) {
 			case (titleMenu):
-				currentState = new SlaveInstance; break;
+				currentState = new TitleMenu; break;
+			case (inGame):
+				currentState = new TitleMenu; break;
 			}
+
+			currentState->initialiseInstance(graphicsState, textRenderer, levelSettings);
 			levelSettings->currentStage = levelSettings->nextStage;
 
 			thread renderThread(&SlaveInstance::computer, currentState);
@@ -102,5 +111,9 @@ int main(int argc, char* args[]) {
 	delete levelSettings;
 	
 	err::endLog();
+
+	SDL_Quit();
+	TTF_Quit();
+
 	return 0;
 }

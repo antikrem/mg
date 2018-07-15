@@ -51,13 +51,31 @@
     <ClInclude Include="anon_ents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="_menu.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="graphics_state.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="_slave_class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="_menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="text_entity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_safe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="_interactives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="_level.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="listed_entities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -92,5 +110,27 @@
     <ClCompile Include="input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="thread_safe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="_slave_class.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="log.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config\engine_settings.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="config\gfx_settings.ini">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="config\keybinds.ini">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

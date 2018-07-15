@@ -5,6 +5,16 @@
 #include "animation.h"
 #include <string>
 
+/*Enumeration of different animations avalible as index
+*/
+enum AnimationType {
+	spawn,
+	idle,
+	move_left,
+	move_right,
+	death
+};
+
 typedef map<AnimationType, Animation*> mt_ani;
 
 /*Stores a set of animations for default entity
@@ -24,21 +34,4 @@ public:
 	SDL_Texture* getFrame(AnimationType, int);
 
 };
-
-/*Stores every entity animation into an easy to access store for later use*/
-class AnimationStore {
-private:
-	SDL_Renderer * RENDERER;
-	map<string, AnimationAssignment*> localStore;
-
-public:
-	AnimationStore(SDL_Renderer* in);
-
-	void addAniToStore(const char* location, string assignmentName, AnimationType newType, int width, int frameSkip);
-
-	void addAssToStore(char* assignmentName, AnimationAssignment* newAss);
-
-	AnimationAssignment* getFromStore(string assignmentName);
-};
-
 #endif

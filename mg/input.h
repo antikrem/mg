@@ -20,6 +20,8 @@ struct Input {
 
 
 	bool operator==(Input& rhs);
+
+	bool buttonPressed();
 };
 
 struct KeyBind {

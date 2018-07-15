@@ -7,7 +7,7 @@
 #include <iostream>
 
 
-AnonEnt::AnonEnt(string name, AnimationStore* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets) {
+AnonEnt::AnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets) {
 	this->name = name;
 	this->abovePlayerBullets = abovePlayerBullets;
 
@@ -34,7 +34,7 @@ string AnonEnt::getName() {
 	return name;
 }
 
-void AnonEntInterface::addAnonEnt(string name, AnimationStore* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets) {
+void AnonEntInterface::addAnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets) {
 	toPush.push_back(new AnonEnt(name, animationStore, animationName, position, abovePlayerBullets));
 }
 
