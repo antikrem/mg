@@ -19,6 +19,8 @@
 #include "listed_entities.h"
 #include "text_entity.h"
 #include "parallax.h"
+#include "graphics_state.h"
+#include "str_kit.h"
 
 using namespace std;
 
@@ -68,7 +70,7 @@ protected:
 
 	//Weather report draw variables
 	atomic<int> weatherToReport = 0;
-	atomic<int> numberOfWeatherClips[3] = { 0,0,0 }; //0->lowest, 2->highest
+	atomic<int> numberOfWeatherEffects[3] = { 0,0,0 }; //0->lowest, 2->highest
 
 	//Box entity information varaibles
 	int boxCountRunningTotal = 0;

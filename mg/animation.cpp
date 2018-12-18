@@ -1,7 +1,5 @@
 #include "animation.h"
 
-#include <iostream>
-
 void Animation::resetRect() {
 	srcrect.y = 0;
 	srcrect.x = 0;

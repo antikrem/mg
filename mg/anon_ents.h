@@ -4,7 +4,6 @@
 #include <vector>
 #include <memory>
 
-#include "box_entity.h"
 #include "graphics_state.h"
 #include "listed_entities.h"
 

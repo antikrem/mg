@@ -8,8 +8,8 @@
 
 #include "constants.h"
 #include "box_entity.h"
-#include "listed_entities.h"
 #include "thread_safe.h"
+//#include "random.h"
 
 #include <iostream>
 
@@ -46,7 +46,8 @@ struct Particle {
 	//mass of particle
 	float mass = F(1);
 
-	Particle(CUS_Point position, CUS_Point velocity) {
+	Particle(ParticleType particleType, CUS_Point position, CUS_Point velocity) {
+		this->particleType = particleType;
 		this->position = position;
 		this->velocity = velocity;
 	}
@@ -233,6 +234,14 @@ public:
 			runningTotal += i.size();
 		}
 		return runningTotal;
+	}
+
+	/*Spawns a particle, which will start interacting*/
+	void spawnParticle(CUS_Point spawnPosition, CUS_Point spawnVelocity, ParticleType particleType, float mass = 1) {
+		auto particle = new Particle(particleType, spawnPosition, spawnVelocity);
+	//	particle->textureIdentifier = random::randomInt(0, particleMaster[particleType].size() - 1);
+		particle->mass = mass;
+		
 	}
 
 };
