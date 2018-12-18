@@ -5,6 +5,14 @@
 #include <vector>
 #include <thread>
 
+#include "sdl.h"
+#include "level_enum.h"
+#include "error.h"
+#include "input.h"
+#include "graphics_state.h"
+#include "text_entity.h"
+#include "str_kit.h"
+
 /*Returns a string for WeatherType, for debug*/
 static string weather2String(int wt) {
 	switch (wt) {
@@ -156,8 +164,6 @@ void SlaveInstance::renderer() {
 
 			boxCountCurrent = boxCountRunningTotal;
 
-			fpsContainer->renderText(0);
-
 			//Wait if the framerate is limited
 			if (graphicsState->getFrameLimit()) {
 				unsigned int i;
@@ -173,7 +179,7 @@ void SlaveInstance::renderer() {
 			//handle fps counter, every 1000 cycles
 			if (graphicsState->getShowFPS()) {
 				if (pushFPS) {
-					fps = (float) 1e6 / ((chrono::duration_cast<std::chrono::microseconds>(currentCyclePoint - startCyclePoint)).count());
+					fps = (float) 1e9 / ((chrono::duration_cast<std::chrono::nanoseconds>(currentCyclePoint - startCyclePoint)).count());
 					FPSVector.push_back(fps);
 					pushFPS = false;
 					if (FPSVector.size() >= 20) {
@@ -188,7 +194,7 @@ void SlaveInstance::renderer() {
 						fpsContainer->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
 						fpsContainer->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " with " + to_string(particleSlaveCount) + " at "+ to_string(particleLoad) + "%");
 						fpsContainer->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
-						fpsContainer->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherEffects[0]) + " | M: " + to_string(numberOfWeatherEffects[1]) + " | A: " + to_string(numberOfWeatherEffects[2]));
+						fpsContainer->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
 						cycleDrawCounter = 0;
 						cyclesPerDraw = 0;
 						FPSVector.clear();
@@ -203,6 +209,7 @@ void SlaveInstance::renderer() {
 				fpsContainer->updateTextByKey("cycle", " ");
 				fpsContainer->updateTextByKey("weather", " ");
 			}
+			fpsContainer->renderText(0);
 		}
 		graphicsState->renderFrame();
 	}

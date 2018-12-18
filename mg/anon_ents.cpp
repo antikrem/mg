@@ -1,7 +1,10 @@
 #include <algorithm>
 #include <stdlib.h>
 
+#include "box_entity.h"
 #include "anon_ents.h"
+
+#include <iostream>
 
 
 AnonEnt::AnonEnt(string name, string animationName, CUS_Point position, bool abovePlayerBullets) {

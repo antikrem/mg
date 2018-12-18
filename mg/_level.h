@@ -66,7 +66,6 @@ private:
 	PlayerEntity* player = NULL;
 	//Used for calculating shift of non-center points
 	CUS_Point playerTralingPosition;
-	mutex trailLock;
 
 
 	//Player Bullet list
@@ -139,7 +138,6 @@ private:
 		if (levelSettingsCurrent->currentCharacter == 0) 
 			player = new Sorceress();
 		particleMaster->addForceApplier(player->particulate(true) );
-		playerTralingPosition = player->getPosition();
 
 		//Initialise float text container
 		floatText = new TextContainer(textRenderer);
@@ -203,19 +201,6 @@ private:
 			trueShift -= SHIFTVELOCITY;
 		}
 		shift = (int)trueShift;
-		//Also control the player traling position
-		trailLock.lock();
-		if (getInput().shift) {
-			pass;
-		}
-		else if (playerTralingPosition.x - 2 * SHIFTVELOCITY  > player->getPosition().x) {
-			playerTralingPosition.x -= 2*SHIFTVELOCITY;
-		}
-		else if (playerTralingPosition.x + 2 * SHIFTVELOCITY < player->getPosition().x) {
-			playerTralingPosition.x += 2*SHIFTVELOCITY;
-		}
-		playerTralingPosition.y = player->getPosition().y;
-		trailLock.unlock();
 
 		//Manage windspeed
 		windSpeed = baseWindSpeed + burstWindSpeed;
@@ -248,7 +233,7 @@ private:
 			}
 			if (burstDuration < 0) {
 				currentBurst = -1;
-				burstDuration = (int) (random::randomFloat(0.7f, 1.4f) * 2000);
+				burstDuration = (int) (random::randomFloat(0.7f, 1.4f) * 3000);
 			}
 		}
 		
@@ -266,7 +251,7 @@ private:
 		weatherMasterLock.lock();
 		weatherEffectManager->update(planeSpeed, windSpeed);
 		for (int i = 0; i < 3; i++)
-			numberOfWeatherEffects[i] = weatherEffectManager->getEffectsCountByIndex(i);
+			numberOfWeatherClips[i] = weatherEffectManager->getEffectsCountByIndex(i);
 		weatherToReport = weatherEffectManager->getWeatherType();
 		weatherMasterLock.unlock();
 
@@ -421,16 +406,14 @@ private:
 
 		//Draw background objects under player
 		backgroundObjectManager->lock();
-		trailLock.lock();
 		for (auto i : backgroundObjectManager->getSharedList()->getEntList()) {
 			if (i->getDepth() > 0) {
 				auto temp = i->renderCopy();
-				temp.renderSize.x += (int)(playerTralingPosition.x - i->getPosition().x);
-				drawBoxEntity(temp, para::getShift(playerTralingPosition, i->getPosition(), i->getDepth() ), FULLNORMAL,
+				temp.renderSize.x += (int)(player->getPosition().x - i->getPosition().x);
+				drawBoxEntity(temp, para::getShift( player->getPosition(), i->getPosition(), i->getDepth() ), FULLNORMAL,
 					para::getSizeScaler( i->getDepth() ) );
 			} 
 		}
-		trailLock.unlock();
 		backgroundObjectManager->unlock();
 
 		//Draw weather middle

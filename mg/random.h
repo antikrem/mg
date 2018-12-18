@@ -2,7 +2,6 @@
 #define __RANDOM_H__
 #include <stdlib.h>
 #include <ctime>
-#include <string>
 
 #include "constants.h"
 

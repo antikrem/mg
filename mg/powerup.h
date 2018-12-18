@@ -1,6 +1,7 @@
 #ifndef __POWERUP_H__
 #define __POWERUP_H__
 
+#include "random.h"
 #include "listed_entities.h"
 
 enum UpgradeType {
