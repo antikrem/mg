@@ -101,7 +101,7 @@ namespace err {
 		std::ofstream outfile;
 		outfile.open("log.txt", std::ios_base::app);
 		outfile << "SAFELY EXITED AT: " << currentTime() << std::endl;
-		outfile << meme << std::endl;
+		outfile << "Cycles waited:" << meme << std::endl;
 		outfile.close();
 		writeLock.unlock();
 	}
@@ -124,14 +124,7 @@ namespace err {
 	void logLevelStart(LevelSettings level) {
 		appendToErrorFile("LEVEL STARTED WITH THE FOLLOWING SETTINGS:");
 		appendToErrorFile("Level:" + std::to_string(level.level));
-		switch (level.currentCharacter) {
-		case first:
-			appendToErrorFile("Character: first"); break;
-		case second:
-			appendToErrorFile("Character: second"); break;
-		case third:
-			appendToErrorFile("Character: third"); break;
-		}
+			appendToErrorFile("Player Index: " + to_string(level.currentCharacter));
 		appendToErrorFile("");
 	}
 }

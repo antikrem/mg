@@ -1,17 +1,24 @@
 #ifndef __SLAVE_CLASS_H_INCLUDED__
 #define __SLAVE_CLASS_H_INCLUDED__
 
+#define FULLNORMAL 0
+#define FULLDARK 255
+#define FULLBRIGHT -255
+
+#define FULLSIZE 0
+
 #include <atomic>
 #include <chrono>
 #include <vector>
 
+#include "constants.h"
 #include "sdl.h"
 #include "level_enum.h"
 #include "error.h"
 #include "input.h"
-#include "graphics_state.h"
 #include "listed_entities.h"
 #include "text_entity.h"
+#include "parallax.h"
 
 using namespace std;
 
@@ -21,25 +28,54 @@ class SlaveInstance {
 protected:
 	//current master cycle
 	int cycle = 0;
+	//Seperate from cycle, controls timings for static events
+	int counter = -1;
+	//If true, the counter will not increase
+	bool stuckCounter = false;
+
+	//Master command
+	map<int, vector<string>> commandList;
 
 	//Graphics environment
 	GraphicsState* graphicsState;
 	//Text environment
 	TextRenderer* textRenderer = NULL;
 	//Level state information
-	LevelSettings* currentSettings = NULL;
+	LevelSettings* levelSettingsCurrent = NULL;
 
 	//Thread control variables
 	atomic<bool> initialised = false;
 	atomic<bool> endSlave = false;
+	atomic<bool> endParticler = false;
 	atomic<bool> computerActive = true;
 	atomic<bool> rendererActive = true;
+	atomic<bool> particleActive = false;
 
-	//FPS draw variables
+	//FPS report draw variables
 	float fps = 0;
 	vector<float> FPSVector;
 	atomic<bool> pushFPS = false;
 	TextContainer* fpsContainer = NULL;
+
+	//Cycle report draw variables
+	atomic<int> cycleDrawCounter = 0;
+	atomic<int> cyclesPerDraw = 0;
+
+	//particle report draw variables
+	atomic<float> particleLoad = 0;
+	atomic<int> particleMasterCount = 0;
+	atomic<int> particleSlaveCount = 0;
+
+	//Weather report draw variables
+	atomic<int> weatherToReport = 0;
+	atomic<int> numberOfWeatherClips[3] = { 0,0,0 }; //0->lowest, 2->highest
+
+	//Box entity information varaibles
+	int boxCountRunningTotal = 0;
+	atomic<int> boxCountCurrent = 0;
+
+	//Particle manager
+	ParticleManager* particleMaster = NULL;
 
 	//thread safe input interface, recall Input is trivially defined
 	atomic<Input> safeInput;
@@ -66,15 +102,29 @@ protected:
 	Needs to be overwritten*/
 	virtual void renderCycle();
 
+	/*Takes a command and updates the gamestate
+	Needs to be over written*/
+	virtual void processCommand(string command);
+
+	/*Checks command list,
+	computes if there are commands this cycle*/
+	void computeFromCommandList();
+
+	/*Loads commands from file,
+	Adds timed commands to list, and executes the else */
+	void loadCommandList();
+
 //DRAW FUNCTIONS
-	void drawBoxEntity(RenderInformation drawTarget, int shift, float postScale = 0) {
+	/*darkness is brightest at zero, and completly black at 255*/
+	void drawBoxEntity(RenderInformation drawTarget, int shift, int darkness, float postScale) {
+		boxCountRunningTotal++;
 		SDL_Rect copyReference = drawTarget.renderSize;
 
 		if (postScale != 0) {
-			copyReference.x = (int)( (copyReference.w * postScale - copyReference.w) / 2 );
-			copyReference.y = (int)((copyReference.h * postScale - copyReference.h) / 2);
-			copyReference.w = (int)(copyReference.w * postScale);
-			copyReference.h = (int)(copyReference.h * postScale);
+			copyReference.w = (int)((float)copyReference.w * postScale);
+			copyReference.h = (int)((float)copyReference.h * postScale);
+			copyReference.x = (int)( (float)copyReference.x  - ((float)copyReference.w / 2) );
+			copyReference.y = (int)( (float)copyReference.y  - ((float)copyReference.h / 2) );
 		}
 
 		copyReference.x += shift;
@@ -88,9 +138,37 @@ protected:
 			SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.currentFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
 			SDL_SetTextureAlphaMod(drawTarget.currentFrame, 255);
 		}
-		else {
-			1;
+		else { //If there isn't anything to draw, leave early so a shadow isn't drawn
+			return;
 		}
+
+		//Add shadow
+		if (darkness > 0) {
+			if (drawTarget.alpha > 250) {
+				SDL_SetTextureAlphaMod(drawTarget.shadowFrame, darkness);
+				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.shadowFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
+				SDL_SetTextureAlphaMod(drawTarget.shadowFrame, 255);
+			}
+			else if (drawTarget.alpha > 0) {
+				SDL_SetTextureAlphaMod( drawTarget.shadowFrame, (int)((((float)drawTarget.alpha) / 255) * (float)darkness) );
+				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.shadowFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
+				SDL_SetTextureAlphaMod(drawTarget.shadowFrame, 255);
+			}
+		}
+		//Or add light
+		else if (darkness < 0) {
+			if (drawTarget.alpha > 250) {
+				SDL_SetTextureAlphaMod(drawTarget.lightFrame, -1*darkness);
+				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.lightFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
+				SDL_SetTextureAlphaMod(drawTarget.lightFrame, 255);
+			}
+			else if (drawTarget.alpha > 0) {
+				SDL_SetTextureAlphaMod(drawTarget.lightFrame, -1 * (int)((((float)drawTarget.alpha) / 255) * (float)darkness));
+				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.lightFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
+				SDL_SetTextureAlphaMod(drawTarget.lightFrame, 255);
+			}
+		}
+
 	}
 
 public:
@@ -100,15 +178,19 @@ public:
 	/*If true, safe to delete*/
 	bool readyToFree();
 
-	/*This function will be called as a seperate thread and then disjoint, and handles game logic (e.g.) 300 tiems
+	/*Called as a seperate thread and then disjoint, and handles game logic (e.g.) 300 tiems
 	a second.
-	Ends when endSlave is true (when killThreads() is envoked), and flip computerActive to false*/
+	Ends when endSlave is true (when killThreads() is envoked), and flips computerActive to false*/
 	void computer();
 
-	/*This function will be called as a seperate thread and then disjoint, and handles graphics (e.g.) at
+	/*Called as a seperate thread and then disjoint, and handles graphics (e.g.) at
 	an unlocked clock speed.
-	Ends when endSlave is true (when killThreads() is envoked), and flip rendererActive to false*/
+	Ends when endSlave is true (when killThreads() is envoked), and flips rendererActive to false*/
 	void renderer();
+
+	/*Optional call by computer thread, that is called by computer.
+	Logic runs 150 times a second updating particles asyncronous of compute*/
+	void particler();
 
 	/*Initialises values required for rendering and other neccessary things*/
 	void initialiseInstance(GraphicsState* graphicsState, TextRenderer* textRenderer, LevelSettings* currentSettings);

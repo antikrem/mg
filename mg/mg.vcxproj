@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -70,12 +70,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.8\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -86,7 +86,7 @@
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -111,7 +111,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -133,20 +133,31 @@
     <ClInclude Include="animation.h" />
     <ClInclude Include="animation_set.h" />
     <ClInclude Include="background.h" />
+    <ClInclude Include="background_objects.h" />
     <ClInclude Include="box_entity.h" />
+    <ClInclude Include="bullets_player.h" />
+    <ClInclude Include="bullet_enemy.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="cus_structs.h" />
     <ClInclude Include="dict.h" />
+    <ClInclude Include="enemy_entity.h" />
+    <ClInclude Include="entity_player.h" />
     <ClInclude Include="error.h" />
-    <ClInclude Include="global_constants.h" />
     <ClInclude Include="anon_ents.h" />
     <ClInclude Include="graphics_state.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="level_enum.h" />
     <ClInclude Include="listed_entities.h" />
+    <ClInclude Include="movement_commander.h" />
+    <ClInclude Include="parallax.h" />
+    <ClInclude Include="particles.h" />
+    <ClInclude Include="powerup.h" />
+    <ClInclude Include="random.h" />
+    <ClInclude Include="text_dialogue.h" />
     <ClInclude Include="thread_safe.h" />
     <ClInclude Include="str_kit.h" />
     <ClInclude Include="text_entity.h" />
+    <ClInclude Include="weather.h" />
     <ClInclude Include="_interactives.h" />
     <ClInclude Include="_level.h" />
     <ClInclude Include="_menu.h" />
@@ -162,11 +173,16 @@
     <ClCompile Include="dict.cpp" />
     <ClCompile Include="error.cpp" />
     <ClCompile Include="input.cpp" />
+    <ClCompile Include="listed_entities.cpp" />
+    <ClCompile Include="parallax.cpp" />
+    <ClCompile Include="str_kit.cpp" />
+    <ClCompile Include="text_entity.cpp" />
     <ClCompile Include="thread_safe.cpp" />
     <ClCompile Include="_controller.cpp" />
     <ClCompile Include="_slave_class.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="assets\load_list.txt" />
     <Text Include="log.txt" />
   </ItemGroup>
   <ItemGroup>

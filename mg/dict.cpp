@@ -12,7 +12,10 @@ Dictionary::Dictionary(const char* path, bool suppressError) {
 	else if (!suppressError) {
 		string line;
 		while (getline(inFile, line)) {
-			this->addEntry(line.substr(0, line.find(" ")), line.substr(line.find(" ") + 1, line.length()));
+			if (line.size()) {
+				this->addEntry(line.substr(0, line.find(" ")), line.substr(line.find(" ") + 1, line.length()));
+			}
+			
 		}
 	}
 	inFile.close();
@@ -69,6 +72,10 @@ int  Dictionary::byIntKey(string key) {
 		return 0;
 	}
 	
+}
+
+bool Dictionary::checkKey(string key) {
+	return dict_map.count(key);
 }
 
 void Dictionary::toReport() {

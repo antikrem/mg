@@ -1,5 +1,7 @@
 #include "animation.h"
 
+#include <iostream>
+
 void Animation::resetRect() {
 	srcrect.y = 0;
 	srcrect.x = 0;
@@ -10,25 +12,63 @@ void Animation::resetRect() {
 void Animation::addTextureToMap(SDL_Renderer* RENDERER, SDL_Surface* src, int widthOfFrame, int heightOfFrame, int numberOfFrame, float scale) {
 	SDL_Surface *newSurfaceGenerated =
 		SDL_CreateRGBSurface(0, widthOfFrame, heightOfFrame, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-	//err::logNULL(newSurfaceGenerated, "On loading texture, temp surface failed to be created.");
 
 	srcrect.y = 0;
 	srcrect.x = numberOfFrame * widthOfFrame;
 	srcrect.w = widthOfFrame;
 	srcrect.h = heightOfFrame;
 
-	//	Implement error check for final version
+	//TODO: Implement error check for final version
 	SDL_BlitSurface(src, &srcrect, newSurfaceGenerated, NULL);
 	SDL_Texture* finalTex = SDL_CreateTextureFromSurface(RENDERER, newSurfaceGenerated);
-	texture_map[numberOfFrame] = finalTex;
+	textureMap[numberOfFrame] = finalTex;
+
+	SDL_PixelFormat *fmt = newSurfaceGenerated->format;
+	if (fmt->BitsPerPixel != 32)
+		err::logMessage("Format is borked");
+
+	Uint32 *pixel = (Uint32 *) newSurfaceGenerated->pixels;
+	Uint8 r, g, b, a;
+
+	//Generates dark map
+	SDL_LockSurface(newSurfaceGenerated);
+	for (int y = 0; y<newSurfaceGenerated->h; y++) {
+		for (int x = 0; x < newSurfaceGenerated->w; x++) {
+			pixel = (Uint32 *) newSurfaceGenerated->pixels;
+			pixel += ((y*newSurfaceGenerated->w) + x);
+			SDL_GetRGBA(*pixel, fmt, &r, &g, &b, &a);
+			*pixel = SDL_MapRGBA(fmt, 0, 0, 0, a);
+
+		}
+	}
+	SDL_UnlockSurface(newSurfaceGenerated);
+
+	finalTex = SDL_CreateTextureFromSurface(RENDERER, newSurfaceGenerated);
+	textureShadowMap[numberOfFrame] = finalTex;
+
+	//Generates light map
+	SDL_LockSurface(newSurfaceGenerated);
+	for (int y = 0; y<newSurfaceGenerated->h; y++) {
+		for (int x = 0; x < newSurfaceGenerated->w; x++) {
+			pixel = (Uint32 *)newSurfaceGenerated->pixels;
+			pixel += ((y*newSurfaceGenerated->w) + x);
+			SDL_GetRGBA(*pixel, fmt, &r, &g, &b, &a);
+			*pixel = SDL_MapRGBA(fmt, 255, 255, 255, a);
+
+		}
+	}
+	SDL_UnlockSurface(newSurfaceGenerated);
+
+	finalTex = SDL_CreateTextureFromSurface(RENDERER, newSurfaceGenerated);
+	textureLightMap[numberOfFrame] = finalTex;
+
 	SDL_FreeSurface(newSurfaceGenerated);
 	resetRect();
 }
 
 Animation::Animation(SDL_Renderer* RENDERER, const char* bmp_location, int widthOfFrame, int frameSkip_param, float scale) {
-
 	resetRect();
-	SDL_Surface *temporarySurfaceStorage = SDL_LoadBMP(bmp_location);
+	SDL_Surface *temporarySurfaceStorage = IMG_Load(bmp_location);
 
 	if (temporarySurfaceStorage == NULL) {
 		err::logMessage("ERROR: A file is missing, reinstall or verify game files. Missing file is:");
@@ -68,13 +108,25 @@ Animation::Animation(SDL_Renderer* RENDERER, SDL_Surface* surface, int widthOfFr
 
 Animation::~Animation() {
 	mt_tex::iterator it;
-	for (it = texture_map.begin(); it != texture_map.end(); it++) {
+	for (it = textureMap.begin(); it != textureMap.end(); it++) {
+		SDL_DestroyTexture(it->second);
+	}
+
+	for (it = textureShadowMap.begin(); it != textureShadowMap.end(); it++) {
 		SDL_DestroyTexture(it->second);
 	}
 }
 
 SDL_Texture* Animation::getFrame(int numberOfFrame) {
-	return texture_map[numberOfFrame];
+	return textureMap[numberOfFrame];
+}
+
+SDL_Texture* Animation::getShadowFrame(int numberOfFrame) {
+	return textureShadowMap[numberOfFrame];
+}
+
+SDL_Texture* Animation::getLightFrame(int numberOfFrame) {
+	return textureLightMap[numberOfFrame];
 }
 
 int Animation::getTotalFrames() {

@@ -7,12 +7,12 @@
 #include <iostream>
 
 
-AnonEnt::AnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets) {
+AnonEnt::AnonEnt(string name, string animationName, CUS_Point position, bool abovePlayerBullets) {
 	this->name = name;
 	this->abovePlayerBullets = abovePlayerBullets;
 
-	position_Entity = position;
-	setAnimationSet(animationStore->getFromStore(animationName));
+	this->position = position;
+	setAnimationSet(getFromStore(animationName));
 	updateBox();
 }
 
@@ -21,7 +21,7 @@ bool AnonEnt::getAbovePlayerBullets() {
 }
 
 void AnonEnt::updatePosition(CUS_Point position) {
-	position_Entity = position;
+	this->position = position;
 	updateBox();
 }
 
@@ -34,8 +34,8 @@ string AnonEnt::getName() {
 	return name;
 }
 
-void AnonEntInterface::addAnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets) {
-	toPush.push_back(new AnonEnt(name, animationStore, animationName, position, abovePlayerBullets));
+void AnonEntInterface::addAnonEnt(string name, string animationName, CUS_Point position, bool abovePlayerBullets) {
+	toPush.push_back(new AnonEnt(name, animationName, position, abovePlayerBullets));
 }
 
 void AnonEntInterface::updateAnonEnt() {
@@ -76,6 +76,7 @@ shared_ptr<AnonEnt> AnonEntInterface::getAnonEntByName(string name) {
 	err::logMessage("getAnonEntByName was given a name that doesn't exist in table, name is: " + name);
 	return pushed[0];
 }
+
 
 void AnonEntInterface::clearDeadAnonEnts() {
 	pushed.erase(remove_if(

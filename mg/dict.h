@@ -31,6 +31,7 @@ public:
 	void editEntry(std::string key, std::string value);
 	string byKey(string key, bool suppressError = false);
 	int byIntKey(string key);
+	bool checkKey(string key);
 	void toReport();
 };
 

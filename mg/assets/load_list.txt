@@ -1,0 +1,16 @@
+///location animation widthOfFrame frameskip
+
+//Characters
+default_player
+entity_sprites\\player\\defsprite.png idle 70 20
+
+fire_circle
+entity_sprites\\player\\anon_ents\\fire_circle.png idle 46 20
+
+//Bullets
+default_bullet
+bullet_sprites\\player\\bullet_spr.png idle 16 20
+
+//PowerUps
+base_powerup
+power_ups//base.bmp idle 40 20

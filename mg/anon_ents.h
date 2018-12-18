@@ -6,17 +6,18 @@
 
 #include "box_entity.h"
 #include "graphics_state.h"
+#include "listed_entities.h"
 
 #include <iostream>
 
-class AnonEnt : public BoxEntity {
+class AnonEnt : public ListedEntity {
 private:
 	string name;
 	bool flag = true;
 	bool abovePlayerBullets = false;
 
 public:
-	AnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets);
+	AnonEnt(string name, string animationName, CUS_Point position, bool abovePlayerBullets);
 
 	bool getAbovePlayerBullets();
 
@@ -27,12 +28,14 @@ public:
 	string getName();
 };
 
+/*Inherit to have an interface for anon ents.
+anon ents can be updated with updatePosition() and spinEnt() */
 class AnonEntInterface {
 protected:
 	vector< AnonEnt* > toPush;
 	vector< shared_ptr<AnonEnt> > pushed;
 
-	void addAnonEnt(string name, GraphicsState* animationStore, string animationName, CUS_Point position, bool abovePlayerBullets = false);
+	void addAnonEnt(string name, string animationName, CUS_Point position, bool abovePlayerBullets = false);
 
 	/*overwrite to update each anon ent every cycle please god do it*/
 	virtual void updateAnonEnt();

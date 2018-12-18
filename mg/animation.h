@@ -5,10 +5,8 @@
 #include <string>
 
 #include "sdl.h"
+#include "sdl_image.h"
 #include "error.h"
-
-
-
 
 using namespace std;
 
@@ -32,9 +30,12 @@ protected:
 
 	/*Bread and butter of the Animation class,
 	Associates the position of frame in animation (int) to a pointer to the animation*/
-	mt_tex texture_map;
+	mt_tex textureMap;
+	mt_tex textureShadowMap;
+	mt_tex textureLightMap;
 
 	SDL_Rect srcrect;
+
 	void resetRect();
 	void addTextureToMap(SDL_Renderer*, SDL_Surface*, int, int, int, float);
 
@@ -46,6 +47,10 @@ public:
 	~Animation();
 
 	SDL_Texture* getFrame(int);
+
+	SDL_Texture* getShadowFrame(int);
+
+	SDL_Texture* getLightFrame(int);
 
 	int getTotalFrames();
 

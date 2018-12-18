@@ -1,0 +1,3 @@
+ENEMY 600 default_player 10.67 500 500 500 0 0
+//MOVE 100 0 1 1 0 1 0 0
+DEATH 500000

@@ -1,74 +1,17 @@
-#pragma once
 #include <map>
 #include "sdl.h"
 #include "error.h"
 #include "dict.h"
-#include "global_constants.h"
+#include "constants.h"
 #include "background.h"
+#include "sdl_image.h"
+
+#include "parallax.h"
+#include "str_kit.h"
 
 #include <iostream>
 
 using namespace std;
-
-
-int BackgroundManager::getFreeBackgroundSpace() {
-	for (int i = 0; i < MAX_BACKGROUND_TABLE; i++) {
-		if (backgroundTable[i].texture == NULL) {
-			return i;
-		}
-	}
-	err::logMessage("Make MAX_BACKGROUND_TABLE bigger");
-	return 0;
-}
-
-void BackgroundManager::updateBackground() {
-	if (currentBackground == NULL) {
-		currentBackground = backgroundSchedule[0];
-		if (currentBackground == NULL) {
-			err::logMessage("No background at backgroundSchedule[0], be sure to declare");
-		}
-	}
-
-	if (backgroundSchedule[internalCounter] != NULL) {
-		currentBackground = backgroundSchedule[internalCounter];
-	}
-
-	bool addNewBackground = true;
-
-	if (speedTable.count(internalCounter) == 1) {
-		scrollSpeed = speedTable[internalCounter];
-	}
-
-	for (int i = 0; i < MAX_BACKGROUND_TABLE; i++) {
-		if (backgroundTable[i].texture != NULL) {
-			backgroundTable[i].dest_y += scrollSpeed;
-			backgroundTable[i].dest.y = (int)backgroundTable[i].dest_y;
-			if (backgroundTable[i].dest.y < 0) {
-				addNewBackground = false;
-			}
-
-			//deletes backgrounds out of range
-			int w, h;
-			SDL_QueryTexture(backgroundTable[i].texture, NULL, NULL, &w, &h);
-
-			if (backgroundTable[i].dest.y - 5 > WORK_SPACE_Y) {
-				backgroundTable[i].texture = NULL;
-				backgroundTable[i].dest_y = 0;
-				backgroundTable[i].dest = { 0, 0, 0, 0, };
-			}
-		}
-	}
-
-	if (addNewBackground == true) {
-		int w, h;
-		SDL_QueryTexture(currentBackground, NULL, NULL, &w, &h);
-		SDL_Rect newDest = { 0, -h, w, h };
-
-		BackRender newElement = { currentBackground, -(float)h , newDest, false };
-
-		backgroundTable[getFreeBackgroundSpace()] = newElement;
-	}
-}
 
 void BackgroundManager::addBackground(int cycles, SDL_Texture* newText) {
 	if (cycles < 0) {
@@ -82,147 +25,190 @@ void BackgroundManager::addBackground(int cycles, SDL_Texture* newText) {
 	}
 }
 
-void BackgroundManager::addScrollSpeed(int cycles, float speed) {
+void BackgroundManager::addTransitionalBackground(int cycles, SDL_Texture* newText) {
 	if (cycles < 0) {
-		err::logMessage("A scroll was added on a negative cycle");
+		err::logMessage("A background was added on a negative cycle");
 	}
 	else {
-		speedTable[cycles] = speed;
+		if (newText == NULL) {
+			err::logMessage("Background added was NULL");
+		}
+		backgroundSchedule[cycles] = newText;
 	}
 }
 
-void BackgroundManager::addShiftCoeff(int cycles, float shift) {
-	if (cycles < 0) {
-		err::logMessage("A shift was added on a negative cycle");
-	}
-	else {
-		shiftTable[cycles] = shift;
-	}
-}
+BackgroundManager::BackgroundManager(SDL_Renderer* RENDERER, LevelSettings* levelSet) {
+	this->renderer = RENDERER;
 
-BackgroundManager::BackgroundManager() {
-	for (int i = 0; i < MAX_BACKGROUND_TABLE; i++) {
-		backgroundTable[i].texture = NULL;
-		backgroundTable[i].dest = { 0, 0, 0, 0 };
-		backgroundTable[i].dest_y = 0;
-	}
-	speedTable[0] = (float)1;
-}
-
-BackgroundManager::~BackgroundManager() {
-	for (auto const& element : backgroundSchedule) {
-		SDL_DestroyTexture(element.second);
-	}
-}
-
-void BackgroundManager::initialiseBackgroundManager(SDL_Renderer* RENDERER, LevelSettings* levelSet) {
-	int level = levelSet->level;
-
-	string filePath = "levels\\";
-	filePath.append(to_string(level));
-	filePath.append("\\backgrounds\\update_table.txt");
+	string basePath = "campaigns\\";
+	basePath.append(levelSet->campaign);
+	basePath.append("\\");
+	basePath.append(to_string(levelSet->level));
+	basePath.append("\\");
+	string masterPath = basePath;
+	masterPath.append("level_master.txt");
+	basePath.append("\\backgrounds\\");
 
 	ifstream inFile;
-	inFile.open(filePath.c_str());
+	inFile.open(masterPath.c_str());
 
 	string line;
+	string backgroundImageLocation;
+	int lineNo = 0;
+
 	while (getline(inFile, line)) {
-		if (line[0] == 's') {
-			addScrollSpeed(
-				stoi(line.substr(1, line.find(" "))),
-				stof(line.substr(line.find(" ") + 1, line.length()))
-			);
+		lineNo++;
+		auto lineVec = str_kit::splitOnToken(line, ' ');
+
+		if ((line[0] == '/' && line[1] == '/')) {
+			pass;
 		}
-		else if (line[0] == 'c') {
-			addShiftCoeff(
-				stoi(line.substr(1, line.find(" "))),
-				stof(line.substr(line.find(" ") + 1, line.length()))
-			);
+		else if (line == "") {
+			pass;
 		}
-		else if (line[0] == '/') {
-			;
+		else if (lineVec.size() == 0) {
+			pass;
+		}
+		else if (lineVec[0] == "BACKGROUND") {
+			backgroundImageLocation = basePath;
+			backgroundImageLocation.append(lineVec[2]);
+			SDL_Surface *temporarySurfaceStorage = IMG_Load(backgroundImageLocation.c_str());
+			SDL_Texture *finalTexture = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+			SDL_FreeSurface(temporarySurfaceStorage);
+			backgroundSchedule[stoi(lineVec[1])] = finalTexture;
+			depthTable[stoi(lineVec[1])] = stof(lineVec[3]);
+
+			if (lineVec.size() == 5) {
+				backgroundImageLocation = basePath;
+				backgroundImageLocation.append(lineVec[4]);
+				SDL_Surface *temporarySurfaceStorage = IMG_Load(backgroundImageLocation.c_str());
+				SDL_Texture *finalTexture = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+				SDL_FreeSurface(temporarySurfaceStorage);
+				backgroundTransitionSchedule[stoi(lineVec[1])] = finalTexture;
+			}
+
 		}
 	}
 	inFile.close();
 
-	filePath = "levels\\";
-	filePath.append(to_string(level));
-	filePath.append("\\backgrounds\\");
-
-	string filePathTemp = filePath;
-	filePathTemp.append("background_table.txt");
-
-	inFile.open(filePathTemp);
-
-	int cycle;
-	SDL_Surface* newSurf;
-	SDL_Texture* newTex;
-	string bmpPos;
-
-	err::logMessage("Loading backgrounds:");
-	while (getline(inFile, line)) {
-		cycle = stoi(line.substr(0, line.find(" ")));
-
-		bmpPos = filePath;
-		bmpPos.append(line.substr(line.find(" ") + 1, line.length()));
-		bmpPos.append(".bmp");
-
-		err::logMessage(to_string(cycle) + " " + bmpPos);
-	
-		newSurf = SDL_LoadBMP(bmpPos.c_str());
-		newTex = SDL_CreateTextureFromSurface(RENDERER, newSurf);
-		SDL_FreeSurface(newSurf);
-
-		addBackground(cycle, newTex);
+	if (backgroundSchedule.count(0))
+		currentBackground = backgroundSchedule[0];
+	else {
+		err::logMessage("No background schedule for cycle 0");
+		currentBackground = NULL;
 	}
+		
+
+	if (backgroundTransitionSchedule.count(0))
+		transitionBackground = backgroundTransitionSchedule[0];
+	currentDepth = depthTable[0];
+
+	int totalScroll = 1080;
+	BackRender newbackground;
+	while (totalScroll > 0) {
+		int w, h;
+		if (transitionBackground) {
+			SDL_QueryTexture(transitionBackground, NULL, NULL, &w, &h);
+			newbackground.texture = transitionBackground;
+			transitionBackground = NULL;
+		}
+		else {
+			SDL_QueryTexture(currentBackground, NULL, NULL, &w, &h);
+			newbackground.texture = currentBackground;
+		}
+
+		totalScroll -= h;
+		
+		newbackground.dest.w = w;
+		newbackground.dest.h = h;
+		newbackground.dest.x = 0;
+		newbackground.dest_y = F(totalScroll);
+		newbackground.dest.y = (int)newbackground.dest_y;
+		
+		backgroundList.push_back(newbackground);
+	}
+	
 }
 
-void BackgroundManager::primeBackgroundTable() {
-	internalCounter++;
-	updateBackground();
+BackgroundManager::~BackgroundManager() {
+	for (auto element : backgroundSchedule) {
+		SDL_DestroyTexture(element.second);
+		element.second = NULL;
+	}
+
+	for (auto element : backgroundTransitionSchedule) {
+		SDL_DestroyTexture(element.second);
+		element.second = NULL;
+	}
 }
 
 //TODO: 1080 background updates per fucking second
 void BackgroundManager::forceBackgroundTable() {
 	for (int i = 0; i < 1080; i++) {
-		updateBackground();
+		;
 	}
 }
 
-void BackgroundManager::readyBackgroundTable() {
-	for (int i = 0; i < MAX_BACKGROUND_TABLE; i++) {
-		backgroundTable[i].renderedFlag = false;
-	}
-}
-
-bool BackgroundManager::remainingBackgroundTable() {
-	bool cont = false;
-	for (int i = 0; i < MAX_BACKGROUND_TABLE; i++) {
-		if (backgroundTable[i].texture != NULL) {
-			if (backgroundTable[i].renderedFlag == false) {
-				return true;
-			}
+void BackgroundManager::updateBackground(float windspeed) {
+	internalCounter++;
+	if (currentBackground == NULL) {
+		currentBackground = backgroundSchedule[0];
+		if (currentBackground == NULL) {
+			err::logMessage("No background at backgroundSchedule[0], be sure to declare");
 		}
 	}
-	return false;
-}
-
-float BackgroundManager::getShift() {
-	if (shiftTable.count(internalCounter) == 1) {
-		currentShift = shiftTable[internalCounter];
+	
+	//update future tiles if time to switch
+	if (backgroundSchedule.count(internalCounter)) {
+		currentBackground = backgroundSchedule[internalCounter];
 	}
-	return currentShift;
-}
+	if (backgroundTransitionSchedule.count(internalCounter)) {
+		transitionBackground = backgroundTransitionSchedule[internalCounter];
+	}
 
-BackRender BackgroundManager::getABackground() {
-	for (int i = 0; i < MAX_BACKGROUND_TABLE; i++) {
-		if (backgroundTable[i].texture != NULL) {
-			if (backgroundTable[i].renderedFlag == false) {
-				backgroundTable[i].renderedFlag = true;
-				return backgroundTable[i];
-			}
+	//update list
+	for (unsigned int i = 0; i < backgroundList.size(); i++) {
+		backgroundList[i].dest_y += windspeed;
+		backgroundList[i].dest.y = (int)backgroundList[i].dest_y;
+	}
+
+	//remove background tiles that pass out
+	while (backgroundList[0].dest_y > 1080) {
+		backgroundList.erase(backgroundList.begin());
+	}
+
+	//add new tiles
+	while (backgroundList[backgroundList.size()-1].dest_y > 0) {
+		BackRender newbackground;
+
+		newbackground.texture = currentBackground;
+		if (transitionBackground) {
+			newbackground.texture = transitionBackground;
+			transitionBackground = NULL;
 		}
+		int w, h;
+		SDL_QueryTexture(newbackground.texture, NULL, NULL, &w, &h);
+		newbackground.dest_y = (backgroundList[backgroundList.size() - 1].dest_y - F(h));
+		newbackground.dest.y = (int)newbackground.dest_y;
+		newbackground.dest.w = w;
+		newbackground.dest.h = h;
+		newbackground.dest.x = 0;
+		backgroundList.push_back(newbackground);
 	}
-	err::logMessage("getABackGround returned nothing when remainingBackgroundTable() == TRUE");
-	return backgroundTable[0];
+
+}
+
+void BackgroundManager::drawBackground(int shift) {
+	float newShift = para::getSizeScaler(currentDepth)* F(shift);
+
+	SDL_Rect temp;
+	for (auto backRender : backgroundList) {
+		temp.h = backRender.dest.h;
+		temp.w = backRender.dest.w;
+		temp.x = backRender.dest.x;
+		temp.y = backRender.dest.y;
+		temp.x += (int)newShift;
+
+		SDL_RenderCopy(renderer, backRender.texture, NULL, &temp);
+	}
 }

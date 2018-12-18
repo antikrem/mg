@@ -1,4 +1,5 @@
 #include "box_entity.h"
+#include "constants.h"
 #include <iostream>
 
 static string returnLookUp(AnimationType type) {
@@ -13,29 +14,20 @@ static string returnLookUp(AnimationType type) {
 	return "idle";
 }
 
-bool checkPointInRect(CUS_Point point, SDL_Rect rectangle) {
-	if (point.x > rectangle.x && point.x < (rectangle.w + rectangle.x)) {
-		if (point.y > rectangle.y && point.y < (rectangle.h + rectangle.y)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 void BoxEntity::updateBox() {
 	alpha += alphaGrowth;
 
 	if (!internalScale) {
-		visiblePosition_Entity.x = (int)position_Entity.x;
-		visiblePosition_Entity.y = (int)position_Entity.y;
+		visiblePosition_Entity.x = (int)position.x;
+		visiblePosition_Entity.y = (int)position.y;
 		visibleBound_Entity.w = animationSet->getAnimation(currentFrameType)->getWidth();
 		visibleBound_Entity.h = animationSet->getAnimation(currentFrameType)->getHeight();
 		visibleBound_Entity.x = visiblePosition_Entity.x - visibleBound_Entity.w / 2;
 		visibleBound_Entity.y = visiblePosition_Entity.y - visibleBound_Entity.h / 2;
 	}
 	else {
-		visiblePosition_Entity.x = (int)position_Entity.x;
-		visiblePosition_Entity.y = (int)position_Entity.y;
+		visiblePosition_Entity.x = (int)position.x;
+		visiblePosition_Entity.y = (int)position.y;
 		visibleBound_Entity.w = (int)(animationSet->getAnimation(currentFrameType)->getWidth() * internalScale);
 		visibleBound_Entity.h = (int)(animationSet->getAnimation(currentFrameType)->getHeight() * internalScale);
 		visibleBound_Entity.x = visiblePosition_Entity.x - visibleBound_Entity.w / 2;
@@ -76,9 +68,14 @@ void BoxEntity::switchAnimation(AnimationType newAnimation) {
 		err::logMessage("playAnimation failed: no annimation exists");
 		err::logMessage( returnLookUp(newAnimation) );
 	}
+	else if (newAnimation == currentFrameType) {
+		pass;
+	} 
 	else {
 		currentFrameType = newAnimation;
 		backupFrameType = newAnimation;
+		skippingFrame = 0;
+		currentNumberFrame = 0;
 	}
 	itCurrentFrame();
 	updateBox();
@@ -86,7 +83,7 @@ void BoxEntity::switchAnimation(AnimationType newAnimation) {
 
 void BoxEntity::setAnimationSet(AnimationAssignment* animation_map_param) {
 	if (animation_map_param == NULL) {
-		err::logMessage("playAnimation failed : no annimation exists, animation that failed is ");
+		err::logMessage("ERROR: Animation set to global default"); //TODO: set to global default
 	}
 	animationSet = animation_map_param;
 	currentFrameType = idle;
@@ -97,17 +94,35 @@ SDL_Rect BoxEntity::getRenderSize() {
 	return visibleBound_Entity;
 }
 
-CUS_Point BoxEntity::getPosition() {
-	return position_Entity;
-}
+
 
 SDL_Texture* BoxEntity::getCurrentFrame() {
 	if (animationSet == NULL) {
+		err::logMessage("Animation set not specified");
 		return NULL;
-		err::logMessage("Animation set to null");
 	}
 	else {
 		return animationSet->getFrame(currentFrameType, currentNumberFrame);
+	}
+}
+
+SDL_Texture* BoxEntity::getCurrentShadowFrame() {
+	if (animationSet == NULL) {
+		err::logMessage("Animation set not specified");
+		return NULL;
+	}
+	else {
+		return animationSet->getShadowFrame(currentFrameType, currentNumberFrame);
+	}
+}
+
+SDL_Texture* BoxEntity::getCurrentLightFrame() {
+	if (animationSet == NULL) {
+		err::logMessage("Animation set not specified");
+		return NULL;
+	}
+	else {
+		return animationSet->getLightFrame(currentFrameType, currentNumberFrame);
 	}
 }
 
@@ -117,14 +132,6 @@ float BoxEntity::getAngle() {
 
 int BoxEntity::getTotalFrames() {
 	return animationSet->getAnimation(currentFrameType)->getTotalFrames();
-}
-
-void BoxEntity::setFlag(bool flag) {
-	this->flag = flag;
-}
-
-bool BoxEntity::getFlag() {
-	return flag;
 }
 
 bool BoxEntity::getAnimationPlayed() {
@@ -160,6 +167,8 @@ float BoxEntity::getAlpha() {
 RenderInformation  BoxEntity::renderCopy() {
 	RenderInformation returnValue;
 	returnValue.currentFrame = getCurrentFrame();
+	returnValue.shadowFrame = getCurrentShadowFrame();
+	returnValue.lightFrame = getCurrentLightFrame();
 	returnValue.renderSize = getRenderSize();
 	returnValue.angle = getAngle();
 	returnValue.alpha = getAlpha();

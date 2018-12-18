@@ -23,9 +23,9 @@ private:
 	ButtonManager* opener = NULL;
 
 	void initialise() {
-		backgroundManager = new BackgroundManager();
-		backgroundManager->initialiseBackgroundManager(graphicsState->getGRenderer(), currentSettings);
-		backgroundManager->forceBackgroundTable();
+		para::setDistanceFromPlane((float)1000);
+
+		backgroundManager = new BackgroundManager(graphicsState->getGRenderer(), levelSettingsCurrent);
 
 		opener = new ButtonManager(textRenderer, gold, sans36);
 		opener->addButton("MEME", { 100, 200, 200, 36 }, but1 );
@@ -40,37 +40,20 @@ private:
 
 	void computeCycle() {
 		opener->lock();
-		opener->update( getInput(), currentSettings );
+		opener->update( getInput(), levelSettingsCurrent );
 		opener->unlock();
 
-		SharedEnityList<ListedEntity> list;
-		ListedEntity* meme = new ListedEntity();
-
-		list.pushObject(meme);
-		cout << list.size();
-		meme->setFlag(false);
-		list.cleanDeathFlags();
-		cout << list.size();
-
-		if (currentSettings->buttonFlag == titleToMenu) {
-			currentSettings->buttonFlag.store(none);
-			currentSettings->level = 1;
-			currentSettings->nextStage = inGame;
-			currentSettings->endLevel = true;
+		if (levelSettingsCurrent->buttonFlag == titleToMenu) {
+			levelSettingsCurrent->buttonFlag.store(none);
+			levelSettingsCurrent->level = 1;
+			levelSettingsCurrent->nextStage = inGame;
+			levelSettingsCurrent->endLevel = true;
 		}
 	}
 
 	void renderCycle() {
 		backgroundManager->lock();
-		backgroundManager->readyBackgroundTable();
-
-		BackRender temp;
-		SDL_Rect tempRect;
-		while (backgroundManager->remainingBackgroundTable()) {
-			temp = backgroundManager->getABackground();
-			tempRect = temp.dest;
-			SDL_RenderCopy(graphicsState->getGRenderer(), temp.texture, NULL, &tempRect);
-		}
+		backgroundManager->drawBackground(0);
 		backgroundManager->unlock();
 
 		opener->render();

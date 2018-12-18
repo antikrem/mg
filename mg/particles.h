@@ -1,0 +1,240 @@
+#ifndef __PARTICLES_H__
+#define __PARTICLES_H__
+
+#include <vector>
+#include <cmath>
+
+#include "graphics_state.h"
+
+#include "constants.h"
+#include "box_entity.h"
+#include "listed_entities.h"
+#include "thread_safe.h"
+
+#include <iostream>
+
+///Particle constants
+//There are two components to interaction between a particle and a force applier
+//A particle will be affected by the distance from a force applier
+//The force appplier will slightly repel nearby particles, displacing them based on mass and also velocity
+//Distance to particle inversly scale the strength of proximity displacement
+//This is the base distance of how far particles are effected
+#define PROXIMITY_DISPLACEMENT F(20)
+//Maximum momentum imparted at centerpoint from proximity displacement
+#define DISTANCE_CONSTANT F(1)
+//Additional scalar for velocity, which is multiplied by magnitude of velocity and added
+#define VELOCITY_CONSTANT F(2)
+//Another scalar for acceleration, needs to be big, BIG
+#define ACCELERATION_CONSTANT F(5)
+//The strength of momentum transfered frmom proximity scales from distance
+//The displacement is calculated as:
+//displacement = (float f = mass * ( (-1*DISTANCE_CONSTANT/PROXIMITY_DISPLACEMENT) distance + DISTANCE_CONSTANT + VELOCITY_CONSTANT*vel) > 0 ? f : 0;
+
+//different types of particles
+enum ParticleType {
+	particle_gold
+};
+
+//Represents one particle, requires manager to store textures
+struct Particle {
+	ParticleType particleType;
+	//The identifier of the texture
+	int textureIdentifier;
+
+	CUS_Point position;
+	CUS_Point velocity;
+	//mass of particle
+	float mass = F(1);
+
+	Particle(CUS_Point position, CUS_Point velocity) {
+		this->position = position;
+		this->velocity = velocity;
+	}
+};
+
+struct ParticleTemplate {
+public:
+	//Each template needs to load a spritesheet before use
+	SDL_Texture* particleSpriteSheet = NULL;
+	//Size of first src rectangle, size x horrizontally times frame# for next frame
+	SDL_Rect firstFrame;
+	//number of frames for this template
+	int numberOfFrames;
+
+	SDL_Rect getCurrentFrameRect(int frame) {
+		SDL_Rect newFrame = firstFrame;
+		newFrame.x += frame * newFrame.w;
+		return newFrame;
+	}
+};
+
+//Each force applier has a list of weak pointers 
+//Each object that can apply force stores refernce to this object
+class ForceApplier : public ThreadSafe {
+	//Vector of local particles
+	vector<weak_ptr<Particle>> localParticles;
+
+	//The master of the force applier will set this to true right before it dies
+	//At which point, the ParticleManager can delete and reclaim memory
+	bool toClear = false;
+
+	CUS_Point position = { 0, 0 };
+	CUS_Point velocity = { 0, 0 };
+	float acceleration = 0;
+	float maxVelocity = 0;
+	float maxAcceleration = 0;
+	//Maximum range that particles are added to this applier
+	float maxAffectRange = 0;
+
+	float maximumRange = 0;
+
+	//mass of applier
+	float mass = F(1);
+
+public:
+	void setFlagFalse() {
+		toClear = true;
+	}
+
+	float getRange() {
+		return maxAffectRange;
+	}
+
+	//Recalculates the maximum range that this force applier can push to
+	void recalculateMaximumRange() {
+		maximumRange = (PROXIMITY_DISPLACEMENT / DISTANCE_CONSTANT)*(VELOCITY_CONSTANT * maxVelocity + ACCELERATION_CONSTANT * maxAcceleration);
+	}
+
+	void updatePositionAndVelocity(CUS_Point position, CUS_Point velocity) {
+		this->position = position;
+		float f;
+		acceleration = (f = this->velocity.toPolarMagnitude() - velocity.toPolarMagnitude()) > 0 ? f : 0;
+		if (acceleration > maxAcceleration)
+			this->maxAcceleration = acceleration;
+		this->velocity = velocity;
+		if (velocity.toPolarMagnitude() > maxVelocity)
+			maxVelocity = velocity.toPolarMagnitude();
+	}
+
+	void update() {
+		//add displacement force
+		for (auto particle : localParticles) {
+			if (auto p = particle.lock()) {
+				float distance = (p->position-position - position).toPolarMagnitude();
+				float f;
+				auto displacement = (
+					f = mass * ((-1 * DISTANCE_CONSTANT / PROXIMITY_DISPLACEMENT)* distance + DISTANCE_CONSTANT + VELOCITY_CONSTANT * velocity.toPolarMagnitude() + ACCELERATION_CONSTANT * acceleration
+						) > 0 ? f : 0);
+			}
+		}
+		
+
+	}
+
+	void clearNeighbourhood() {
+		localParticles.clear();
+	}
+
+	void addAParticle(shared_ptr<Particle> particle) {
+		localParticles.push_back(particle);
+	}
+
+	CUS_Point getPosition() {
+		return position;
+	}
+
+	float getMass() {
+		return mass;
+	}
+};
+
+class ParticleManager : public ThreadSafe {
+	int internalCounter = -1;
+	//Frames between every allocation cycle
+	int neighbourhoodReallocationRate = 10;
+
+	//Number of neighbourhood groups, every reallocation cycle, only one of these gorups will be updated
+	int neighbourhoodGroupCount = 1;
+
+	//last heighbourhood group neightbourhood was allocated on last allocation cycle
+	int neighbourhoodGroupIncrement = 0;
+	//last neightbourhhood allocated a force eapplier 
+	int neightbourhoodGroupAllocator = 0;
+	//last neighbourhood group updated
+	int neightbourhoodGroupUpdate = 0;
+
+	GraphicsState* graphicsState = NULL;
+	//For rendering purposes
+	map<ParticleType, vector<ParticleTemplate>> particleMaster;
+	//Master list
+	vector<shared_ptr<Particle>> mainParticleList;
+	//forceApplierMasterList[i] is the i-th neighbourhood
+	vector<vector<ForceApplier*>> forceApplierMasterList;
+
+	//Sets up particle manager to use this many groups
+	void setUpGroups(unsigned int numberOfGroups) {
+		if (numberOfGroups < forceApplierMasterList.size()) {
+
+		}
+		else if (numberOfGroups > forceApplierMasterList.size()) {
+			for (unsigned int i = forceApplierMasterList.size(); i < numberOfGroups; i++) {
+				vector<ForceApplier *> toPush;
+				forceApplierMasterList.push_back(toPush);
+			}
+		}
+		neighbourhoodGroupCount = numberOfGroups;
+	}
+
+public:
+	ParticleManager(GraphicsState* graphicsState) {
+		this->graphicsState = graphicsState;
+		setUpGroups(2);
+	}
+
+	void addForceApplier(ForceApplier* forceApplier) {
+		neightbourhoodGroupAllocator = (++neightbourhoodGroupAllocator) % neighbourhoodGroupCount;
+		forceApplierMasterList[neightbourhoodGroupAllocator].push_back(forceApplier);
+	}
+
+	//The cycle will be prematurly ended if it takes too long
+	void grandParticleUpdate(chrono::high_resolution_clock::time_point startCyclePoint) {
+		internalCounter++;
+		//Reallocate every neighbourhood every allocation seconds
+		if (internalCounter%neighbourhoodReallocationRate && forceApplierMasterList.size()) {
+			neighbourhoodGroupIncrement = (++neighbourhoodGroupIncrement) % neighbourhoodGroupCount;
+			//For each applier in this neighbourhood group, clear its neighbourhood
+			//and re allocate it a neighbourhood
+			for (auto applier : forceApplierMasterList[neighbourhoodGroupIncrement]) {
+				applier->clearNeighbourhood();
+				applier->recalculateMaximumRange();
+				for (auto particle : mainParticleList) {
+					if (particle->position.getDistanceToPoint(applier->getPosition()) < applier->getRange()) {
+
+					}
+				}
+			}
+		}
+		//On other cycles, do regular computation
+		else if (forceApplierMasterList.size()) {
+			neightbourhoodGroupUpdate = (++neightbourhoodGroupUpdate) % neighbourhoodGroupCount;
+			for (auto applier : forceApplierMasterList[neighbourhoodGroupIncrement]) {
+				applier->update();
+			}
+		}
+	}
+
+	int getParticleCount() {
+		return (int) mainParticleList.size();
+	}
+
+	int getApplierCount() {
+		int runningTotal = 0;
+		for (auto i : forceApplierMasterList) {
+			runningTotal += i.size();
+		}
+		return runningTotal;
+	}
+
+};
+
+#endif

@@ -3,18 +3,15 @@
 
 #include "SDL.h"
 #include "thread_safe.h"
+#include "cus_structs.h"
 #include <map>
+#include <vector>
 
-//total backgrounds able to be rendered at a time
-const int MAX_BACKGROUND_TABLE = 6;
-
-/*A storage structure containing a texture and render information that represents one tile of background.
-Has a flag that is flipped true when the surface ahs been rendered this draw cycle*/
+/*A storage structure containing a texture and render information that represents one tile of background.*/
 struct BackRender {
 	SDL_Texture* texture;
 	float dest_y;
 	SDL_Rect dest;
-	bool renderedFlag;
 };
 
 /*Stores and manages BackRenders being drawn.
@@ -22,44 +19,36 @@ Loads background tiles based on clock*/
 class BackgroundManager : public ThreadSafe {
 private:
 	int internalCounter = 0;
+	SDL_Renderer* renderer = NULL;
 
+	//Future background Schedules
 	map<int, SDL_Texture*> backgroundSchedule;
-	BackRender backgroundTable[MAX_BACKGROUND_TABLE];
+	//Only one can be loaded at a time, and it gets pushed on at first opertunity
+	map<int, SDL_Texture*> backgroundTransitionSchedule;
+
+	SDL_Texture* transitionBackground = NULL;
 	SDL_Texture* currentBackground = NULL;
 
-	float scrollSpeed = (float)1;
-	map<int, float> speedTable;
-	map<int, float> shiftTable;
-	float currentShift = (float)3;
+	std::vector<BackRender> backgroundList;
 
-	int getFreeBackgroundSpace();
-
-	void updateBackground();
+	map<int, float> depthTable;
+	float currentDepth = (float)3;
 
 	void addBackground(int cycles, SDL_Texture* newText);
 
-	void addScrollSpeed(int cycles, float speed);
-
-	void addShiftCoeff(int cycles, float shift);
+	void addTransitionalBackground(int cycles, SDL_Texture* newText);
 
 public:
-	BackgroundManager();
+	BackgroundManager(SDL_Renderer* RENDERER, LevelSettings* levelSet);
 
 	~BackgroundManager();
 
-	void initialiseBackgroundManager(SDL_Renderer* RENDERER, LevelSettings* levelSet);
-
-	void primeBackgroundTable();
-
+	/*Cycles through, forcing the new background to completly overwrite the new background*/
 	void forceBackgroundTable();
 
-	void readyBackgroundTable();
+	void updateBackground(float windspeed);
 
-	bool remainingBackgroundTable();
-
-	float getShift();
-
-	BackRender getABackground();
+	void drawBackground(int shift);
 };
 
 #endif

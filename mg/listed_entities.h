@@ -1,17 +1,17 @@
-/*Level Class.
-To be used with _controller.cpp*/
+/*Listed entities are an interface for objects regularily contained in lists
+It allows easy updates and deletion of objects*/
 #ifndef __LISTED_ENTITIES_H__
 #define __LISTED_ENTITIES_H__
 	
 #include "box_entity.h"
-#include "error.h"
+#include "particles.h"
 
 #include <memory>
-#include <mutex>
 #include <type_traits>
 
-/*Allows entities that are stored in */
-class ListedEntity {
+/*Allows entities that are stored in a SharedEntityList
+Also has an interface for interacting with particles*/
+class ListedEntity : public BoxEntity {
 protected:
 	bool flag = true;
 
@@ -19,53 +19,96 @@ protected:
 
 	CUS_Point acceleration = { 0,0 };
 	CUS_Point velocity = { 0,0 };
-	CUS_Point position = { 0,0 };
+
+	ForceApplier* forceApplier = NULL;
 
 public:
-	void setHitBox(float hitBox) {
-		this->hitBox = hitBox;
-	}
+	~ListedEntity();
 
-	float getHitBox() {
-		return hitBox;
-	}
+	void setHitBox(float hitBox);
 
-	void setFlag(bool flag) {
-		this->flag = flag;
-	}
+	float getHitBox();
 
-	bool getFlag() {
-		err::logMessage("oop");
-		return flag;
-	}
+	void setFlag(bool flag);
+
+	bool getFlag();
+
+	CUS_Point getPosition();
+
+	/*Generally, should be called every cycle for every listed entity
+	If it has not been particulated, nothing will happen*/
+	void updateForceApplier();
+
+	/*Can be used when SharedEntityList::listed is true*/
+	float list = 0.0;
+
+	/*Call to create and pull a force applier, to be gracefully inserted into particle manager*/
+	ForceApplier* particulate(bool important);
 };
 
 template <class T>
-class SharedEnityList {
+class SharedEntityList : public ThreadSafe {
 private:
-	mutex lock;
 	vector< shared_ptr<T> > entList;
+	
+	bool listed;
+
+	static bool comp(shared_ptr<T> a, shared_ptr<T> b) {
+		return a->list < b->list;
+	}
 public:
-	void pushObject(T* toPush) {
+	SharedEntityList() {
 		static_assert(std::is_base_of<ListedEntity, T>::value, "T not derived from ListedEntity");
-		entList.push_back(shared_ptr<T>(toPush));
+	}
+
+	//Sets list to true
+	void makeListed() {
+		this->listed = true;
+	}
+
+	void pushObject(T* toPush) {
+		if (!listed)
+			entList.push_back(shared_ptr<T>(toPush));
+		else {
+			auto s = entList.begin();
+			auto e = entList.end();
+			shared_ptr<T> push = shared_ptr<T>(toPush);
+
+			entList.insert(
+				lower_bound(s, e, push, comp),
+				push);
+		}
+	}
+
+	void pushObject(shared_ptr<T> toPush) {
+		if (!listed)
+			entList.push_back(toPush);
+		else {
+			auto s = entList.begin();
+			auto e = entList.end();
+
+			entList.insert(
+				lower_bound(s, e, toPush, comp),
+				toPush);
+		}
 	}
 
 	vector< shared_ptr<T> > getEntList() {
 		return entList;
 	}
 
-	/*Clears entities with death flags
-	Thread safe*/
-	void cleanDeathFlags() {
-		lock.lock();
+	/*Clears entities with death flag
+	Return value for error checking*/
+	int cleanDeathFlags() {
+		int size = entList.size();
 		entList.erase(remove_if(
 			entList.begin(), entList.end(),
 			[](shared_ptr<T>& x) {
 			return !(x->getFlag());
 		}), entList.end());
-		lock.unlock();
+		return (size - entList.size());
 	}
+
 
 	int size() {
 		return entList.size();

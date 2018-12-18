@@ -7,37 +7,43 @@
 
 /*Returns current key pressess based on keyBind Values*/
 Input catchInput(KeyBind* keyBind) {
-	Input current_state;
+	Input currentInputState;
 	const Uint8* keystate;
 
 	keystate = SDL_GetKeyboardState(NULL);
 
-	current_state.left = keystate[keyBind->leftCode];
-	current_state.right = keystate[keyBind->rightCode];
-	current_state.up = keystate[keyBind->upCode];
-	current_state.down = keystate[keyBind->downCode];
-	current_state.shoot = keystate[keyBind->shootCode];
-	current_state.special = keystate[keyBind->specialCode];
-	current_state.dash = keystate[keyBind->dashCode];
-	current_state.shift = keystate[keyBind->shiftCode];
-	current_state.enter = keystate[keyBind->enterCode];
-	current_state.esc = keystate[keyBind->escCode];
+	currentInputState.left = keystate[keyBind->leftCode];
+	currentInputState.right = keystate[keyBind->rightCode];
+	currentInputState.up = keystate[keyBind->upCode];
+	currentInputState.down = keystate[keyBind->downCode];
+	currentInputState.shoot = keystate[keyBind->shootCode];
+	currentInputState.special = keystate[keyBind->specialCode];
+	currentInputState.dash = keystate[keyBind->dashCode];
+	currentInputState.shift = keystate[keyBind->shiftCode];
+	currentInputState.enter = keystate[keyBind->enterCode];
+	currentInputState.esc = keystate[keyBind->escCode];
 
-	return current_state;
+	return currentInputState;
 }
 
 int main(int argc, char* args[]) {
+	//Prime error log sub system
+	err::primeErrorFile();
 
+	//Initialise
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
-	
+
+	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
+		err::logMessage("Error: SDL_Image failed to load, check .dlls or reinstall");
+	}
+
 	//If true, game is in play, else end
 	bool gameState = true;
 
 	GraphicsState* graphicsState = new GraphicsState();
 	TextRenderer* textRenderer = new TextRenderer(graphicsState);
-
-	err::primeErrorFile();
+	loadStore(graphicsState->getGRenderer());
 	
 	SlaveInstance* currentState = NULL;
 	LevelSettings* levelSettings = new LevelSettings;
@@ -61,7 +67,7 @@ int main(int argc, char* args[]) {
 			case (titleMenu):
 				currentState = new TitleMenu; break;
 			case (inGame):
-				currentState = new TitleMenu; break;
+				currentState = new Level; break;
 			}
 
 			currentState->initialiseInstance(graphicsState, textRenderer, levelSettings);
@@ -109,6 +115,8 @@ int main(int argc, char* args[]) {
 
 	delete keyBind;
 	delete levelSettings;
+
+	clearAnimaionStore();
 	
 	err::endLog();
 

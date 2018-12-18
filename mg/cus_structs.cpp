@@ -14,11 +14,51 @@ void CUS_Point::operator+=(const CUS_Point& b) {
 	this->y += b.y;
 }
 
+CUS_Point CUS_Point::operator-(const CUS_Point& b) {
+	CUS_Point ret;
+	ret.x = this->x - b.x;
+	ret.y = this->y - b.y;
+	return ret;
+}
+
+void CUS_Point::operator-=(const CUS_Point& b) {
+	this->x -= b.x;
+	this->y -= b.y;
+}
+
 CUS_Point CUS_Point::operator*(const float& b) {
 	CUS_Point ret;
 	ret.x = this->x * b;
 	ret.y = this->y * b;
 	return ret;
+}
+
+
+CUS_Point CUS_Point::unitVector() {
+	CUS_Point ret;
+	float mag = this->toPolarMagnitude();
+	ret.x = this->x / mag;
+	ret.y = this->y / mag;
+	return ret;
+}
+
+//Dot product
+float CUS_Point::operator*(const CUS_Point& b){
+	return (this->x * b.x + this->y * b.y);
+}
+
+bool CUS_Point::operator!=(const CUS_Point& b) {
+	return ((this->x != b.x) || (this->y != b.y));
+}
+
+CUS_Point CUS_Point::projectionOnto(CUS_Point b){
+	CUS_Point a;
+	a.x = this->x;
+	a.y = this->y;
+	CUS_Point unit = b.unitVector();
+	float scalar = a * unit ;
+	return (unit * scalar) ;
+	
 }
 
 float CUS_Point::toPolarAngle() {
@@ -75,4 +115,34 @@ CUS_Polar CUS_Polar::operator*(const float& b) {
 
 CUS_Polar CUS_Polar::operator*(const CUS_Polar& b) {
 	return { magnitude * b.magnitude, angle + b.angle };
+}
+
+CUS_Polar toPolar(CUS_Point point) {
+	if (point.x == 0 and point.y == 0) {
+		return { 0, 0 }; 
+	}
+	return { point.toPolarMagnitude() , point.toPolarAngle() };
+}
+
+CUS_Point toPoint(CUS_Polar polar) {
+	return polar.toPoint();
+}
+
+bool checkPointInRect(CUS_Point point, SDL_Rect rectangle) {
+	if (point.x > rectangle.x && point.x < (rectangle.w + rectangle.x)) {
+		if (point.y > rectangle.y && point.y < (rectangle.h + rectangle.y)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+float CUS_Point::getTurnToPoint(CUS_Point in) {
+	CUS_Polar tempFrom = toPolar(*this);
+	float targetAngle = normaliseAngle(tempFrom.angle);
+
+	float currentAngle = normaliseAngle(this->getAngleToPoint(in));
+
+	return targetAngle - currentAngle;
+
 }

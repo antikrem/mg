@@ -13,6 +13,8 @@
 struct RenderInformation {
 	float alpha = 255;
 	SDL_Texture* currentFrame;
+	SDL_Texture* shadowFrame;
+	SDL_Texture* lightFrame;
 	SDL_Rect renderSize;
 	float angle;
 };
@@ -21,13 +23,9 @@ struct RenderInformation {
 Contains methods for applying and accessing texture maps
 All entities must updateBox() after every change in position
 */
-
-static bool checkPointInRect(CUS_Point point, SDL_Rect rectangle);
-
 class BoxEntity {
 protected:
-	bool flag = true;
-	CUS_Point position_Entity;
+	CUS_Point position;
 
 	SDL_Point visiblePosition_Entity;
 	SDL_Rect visibleBound_Entity;
@@ -41,11 +39,14 @@ protected:
 	int skippingFrame = 0;
 
 	AnimationAssignment* animationSet;
+	/*Currently played animation*/
 	AnimationType currentFrameType = idle;
+	/*Animation to play on fail, or if current animation ends*/
 	AnimationType backupFrameType = idle;
 
 	void updateBox();
 
+	/*Go to next frame*/
 	void itCurrentFrame();
 
 	//plays the new animation, returning to backupFrameType after the animation
@@ -59,17 +60,15 @@ public:
 
 	SDL_Rect getRenderSize();
 
-	CUS_Point getPosition();
+	SDL_Texture* getCurrentShadowFrame();
+
+	SDL_Texture* getCurrentLightFrame();
 
 	SDL_Texture* getCurrentFrame();
 
 	float getAngle();
 
 	int getTotalFrames();
-
-	void setFlag(bool flag);
-
-	bool getFlag();
 
 	bool getAnimationPlayed();
 
