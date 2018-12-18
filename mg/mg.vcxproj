@@ -175,6 +175,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="listed_entities.cpp" />
     <ClCompile Include="parallax.cpp" />
+    <ClCompile Include="random.cpp" />
     <ClCompile Include="str_kit.cpp" />
     <ClCompile Include="text_entity.cpp" />
     <ClCompile Include="thread_safe.cpp" />
