@@ -10,6 +10,7 @@
 #include "box_entity.h"
 #include "listed_entities.h"
 #include "thread_safe.h"
+#include "random.h"
 
 #include <iostream>
 
@@ -46,7 +47,8 @@ struct Particle {
 	//mass of particle
 	float mass = F(1);
 
-	Particle(CUS_Point position, CUS_Point velocity) {
+	Particle(ParticleType particleType, CUS_Point position, CUS_Point velocity) {
+		this->particleType = particleType;
 		this->position = position;
 		this->velocity = velocity;
 	}
@@ -56,15 +58,66 @@ struct ParticleTemplate {
 public:
 	//Each template needs to load a spritesheet before use
 	SDL_Texture* particleSpriteSheet = NULL;
+	//Each template needs to load a spritesheet before use
+	SDL_Texture* blackParticleSpriteSheet = NULL;
 	//Size of first src rectangle, size x horrizontally times frame# for next frame
 	SDL_Rect firstFrame;
 	//number of frames for this template
 	int numberOfFrames;
 
+	SDL_Texture* pTexFromPath(string loc, GraphicsState* graphicsState, int numberOfFrames) {
+		firstFrame.x = 0;
+		firstFrame.y = 0;
+
+		SDL_Surface *temporarySurfaceStorage = IMG_Load(loc.c_str());
+		if (!temporarySurfaceStorage)
+			err::logMessage("ERROR: Couldn't load " + loc);
+		firstFrame.h = temporarySurfaceStorage->h;
+		firstFrame.w = temporarySurfaceStorage->w / numberOfFrames;
+
+		auto tex = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), temporarySurfaceStorage);
+		if (!tex)
+			err::logMessage("ERROR: Couldn't convert from " + loc);
+		return tex;
+	}
+
+	SDL_Texture* bTexFromPath(string loc, GraphicsState* graphicsState) {
+		SDL_Surface *temporarySurfaceStorage = IMG_Load(loc.c_str());
+		if (!temporarySurfaceStorage)
+			err::logMessage("ERROR: Couldn't load " + loc);
+		SDL_PixelFormat *fmt = temporarySurfaceStorage->format;
+		if (fmt->BitsPerPixel != 32)
+			err::logMessage("Format is borked");
+		Uint32 *pixel = (Uint32 *)temporarySurfaceStorage->pixels;
+		Uint8 r, g, b, a;
+
+		SDL_LockSurface(temporarySurfaceStorage);
+		for (int y = 0; y < temporarySurfaceStorage->h; y++) {
+			for (int x = 0; x < temporarySurfaceStorage->w; x++) {
+				pixel = (Uint32 *)temporarySurfaceStorage->pixels;
+				pixel += ((y*temporarySurfaceStorage->w) + x);
+				SDL_GetRGBA(*pixel, fmt, &r, &g, &b, &a);
+				*pixel = SDL_MapRGBA(fmt, 255, 255, 255, a);
+
+			}
+		}
+		SDL_UnlockSurface(temporarySurfaceStorage);
+		auto tex = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), temporarySurfaceStorage);
+		if (!tex)
+			err::logMessage("ERROR: Couldn't convert from " + loc);
+		return tex;
+	}
+
 	SDL_Rect getCurrentFrameRect(int frame) {
 		SDL_Rect newFrame = firstFrame;
 		newFrame.x += frame * newFrame.w;
 		return newFrame;
+	}
+
+	ParticleTemplate(string position, GraphicsState* graphicsState, int numberOfFrames) {
+		this->numberOfFrames = numberOfFrames;
+		particleSpriteSheet = pTexFromPath(position, graphicsState, numberOfFrames);
+		blackParticleSpriteSheet = bTexFromPath(position, graphicsState);
 	}
 };
 
@@ -96,6 +149,10 @@ public:
 		toClear = true;
 	}
 
+	bool getFlag() {
+		return toClear;
+	}
+
 	float getRange() {
 		return maxAffectRange;
 	}
@@ -120,14 +177,16 @@ public:
 		//add displacement force
 		for (auto particle : localParticles) {
 			if (auto p = particle.lock()) {
-				float distance = (p->position-position - position).toPolarMagnitude();
+				float distance = (p->position - position - position).toPolarMagnitude();
 				float f;
 				auto displacement = (
 					f = mass * ((-1 * DISTANCE_CONSTANT / PROXIMITY_DISPLACEMENT)* distance + DISTANCE_CONSTANT + VELOCITY_CONSTANT * velocity.toPolarMagnitude() + ACCELERATION_CONSTANT * acceleration
 						) > 0 ? f : 0);
 			}
 		}
-		
+	}
+
+	void updateStaticDrift(CUS_Point wind) {
 
 	}
 
@@ -162,10 +221,12 @@ class ParticleManager : public ThreadSafe {
 	int neightbourhoodGroupAllocator = 0;
 	//last neighbourhood group updated
 	int neightbourhoodGroupUpdate = 0;
+	//When a group is updated less frquently, it could look to be going slower
+	//Thus, the update is done as many times as there are groups
 
 	GraphicsState* graphicsState = NULL;
 	//For rendering purposes
-	map<ParticleType, vector<ParticleTemplate>> particleMaster;
+	map<ParticleType, vector<ParticleTemplate>> particleTemplates;
 	//Master list
 	vector<shared_ptr<Particle>> mainParticleList;
 	//forceApplierMasterList[i] is the i-th neighbourhood
@@ -185,10 +246,19 @@ class ParticleManager : public ThreadSafe {
 		neighbourhoodGroupCount = numberOfGroups;
 	}
 
+	//Loads particle templates
+	void loadParticles() {
+		//gold particles
+		particleTemplates[particle_gold].push_back(ParticleTemplate("assets\\particles\\gold.bmp", graphicsState, 6));
+		
+
+	}
 public:
 	ParticleManager(GraphicsState* graphicsState) {
 		this->graphicsState = graphicsState;
 		setUpGroups(2);
+		//Load particles, which are tiny
+		loadParticles();
 	}
 
 	void addForceApplier(ForceApplier* forceApplier) {
@@ -217,14 +287,26 @@ public:
 		//On other cycles, do regular computation
 		else if (forceApplierMasterList.size()) {
 			neightbourhoodGroupUpdate = (++neightbourhoodGroupUpdate) % neighbourhoodGroupCount;
+			//Calculate group effect on applier
 			for (auto applier : forceApplierMasterList[neighbourhoodGroupIncrement]) {
 				applier->update();
 			}
+			//Check if the force applier is still valid, c;ear dead force appliers
+			auto it = forceApplierMasterList[neighbourhoodGroupIncrement].begin();
+			while (it != forceApplierMasterList[neighbourhoodGroupIncrement].end()) {
+				if ((*it)->getFlag()) {
+					it = forceApplierMasterList[neighbourhoodGroupIncrement].erase(it);
+				}
+				else {
+					it++;
+				}
+			}
+
 		}
 	}
 
 	int getParticleCount() {
-		return (int) mainParticleList.size();
+		return (int)mainParticleList.size();
 	}
 
 	int getApplierCount() {
@@ -233,6 +315,18 @@ public:
 			runningTotal += i.size();
 		}
 		return runningTotal;
+	}
+
+	/*Spawns a particle, which will start interacting*/
+	void spawnParticle(CUS_Point spawnPosition, CUS_Point spawnVelocity, ParticleType particleType, float mass = 1) {
+		auto particle = new Particle(particleType, spawnPosition, spawnVelocity);
+		particle->textureIdentifier = random::randomInt(0, particleTemplates[particleType].size() - 1);
+		particle->mass = mass;
+		mainParticleList.push_back(shared_ptr<Particle>(particle));
+	}
+
+	void renderParticles(int shift) {
+
 	}
 
 };

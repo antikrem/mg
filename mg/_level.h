@@ -266,6 +266,7 @@ private:
 		while (it != upcomingEnemyList.end()) {
 			if ((*it)->getSpawningCycle() == counter) {
 				enemyEntities.pushObject((*it));
+				particleMaster->addForceApplier((*it)->particulate(true));
 				it = upcomingEnemyList.erase(it);
 			}
 			else {
