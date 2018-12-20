@@ -155,6 +155,8 @@ private:
 		pullEnemies(&tempEnemyList, levelSettingsCurrent);
 		for (auto enemy : tempEnemyList)
 			upcomingEnemyList.push_back(enemy);
+
+		particleMaster->spawnParticle({ 500,500 }, { 0,0 }, particle_gold);
 	}
 
 	void memFree() {
@@ -446,7 +448,7 @@ private:
 		//Draw Enemies
 		enemyEntities.lock();
 		for (auto i : enemyEntities.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, FULLBRIGHT, FULLSIZE);
+			drawBoxEntity(i->renderCopy(), shift, FULLNORMAL, FULLSIZE);
 		}
 		enemyEntities.unlock();
 
@@ -454,6 +456,9 @@ private:
 		player->lock();
 		drawBoxEntity(player->renderCopy(), shift, FULLNORMAL, FULLSIZE);
 		player->unlock();
+
+		//Draw particles
+		particleMaster->renderParticles(shift);
 
 		//Draw float text
 		floatText->lock();

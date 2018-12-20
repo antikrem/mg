@@ -31,6 +31,9 @@
 //The displacement is calculated as:
 //displacement = (float f = mass * ( (-1*DISTANCE_CONSTANT/PROXIMITY_DISPLACEMENT) distance + DISTANCE_CONSTANT + VELOCITY_CONSTANT*vel) > 0 ? f : 0;
 
+//The number of cycles a particles frame of animation is shown
+#define ANIMATION_FRAMES 100
+
 //different types of particles
 enum ParticleType {
 	particle_gold
@@ -41,16 +44,28 @@ struct Particle {
 	ParticleType particleType;
 	//The identifier of the texture
 	int textureIdentifier;
+	int cycle = 0;
+
+	//Lock particle for value manipulation
+	mutex particleLock;
 
 	CUS_Point position;
 	CUS_Point velocity;
 	//mass of particle
 	float mass = F(1);
 
+	//clear when true
+	bool deathFlag = false;
+
 	Particle(ParticleType particleType, CUS_Point position, CUS_Point velocity) {
 		this->particleType = particleType;
 		this->position = position;
 		this->velocity = velocity;
+	}
+
+	void updateParticle(CUS_Point totalWind) {
+		cycle++;
+		position += velocity;
 	}
 };
 
@@ -114,6 +129,10 @@ public:
 		return newFrame;
 	}
 
+	SDL_Rect getRenderRect(CUS_Point position) {
+		return { (int)(position.x - firstFrame.w/2), (int)(position.y - firstFrame.h / 2), firstFrame.w, firstFrame.h };
+	}
+
 	ParticleTemplate(string position, GraphicsState* graphicsState, int numberOfFrames) {
 		this->numberOfFrames = numberOfFrames;
 		particleSpriteSheet = pTexFromPath(position, graphicsState, numberOfFrames);
@@ -173,6 +192,7 @@ public:
 			maxVelocity = velocity.toPolarMagnitude();
 	}
 
+	//This updates the velocity of the particle based on force applier interation
 	void update() {
 		//add displacement force
 		for (auto particle : localParticles) {
@@ -184,10 +204,6 @@ public:
 						) > 0 ? f : 0);
 			}
 		}
-	}
-
-	void updateStaticDrift(CUS_Point wind) {
-
 	}
 
 	void clearNeighbourhood() {
@@ -229,6 +245,8 @@ class ParticleManager : public ThreadSafe {
 	map<ParticleType, vector<ParticleTemplate>> particleTemplates;
 	//Master list
 	vector<shared_ptr<Particle>> mainParticleList;
+	//Lock when accessing particle list
+	mutex mainParticleLock;
 	//forceApplierMasterList[i] is the i-th neighbourhood
 	vector<vector<ForceApplier*>> forceApplierMasterList;
 
@@ -267,9 +285,10 @@ public:
 	}
 
 	//The cycle will be prematurly ended if it takes too long
-	void grandParticleUpdate(chrono::high_resolution_clock::time_point startCyclePoint) {
+	void grandParticleUpdate(chrono::high_resolution_clock::time_point startCyclePoint, CUS_Point totalWind) {
 		internalCounter++;
-		//Reallocate every neighbourhood every allocation seconds
+
+		//Reallocate every neighbourhood every allocation cycles
 		if (internalCounter%neighbourhoodReallocationRate && forceApplierMasterList.size()) {
 			neighbourhoodGroupIncrement = (++neighbourhoodGroupIncrement) % neighbourhoodGroupCount;
 			//For each applier in this neighbourhood group, clear its neighbourhood
@@ -284,14 +303,10 @@ public:
 				}
 			}
 		}
-		//On other cycles, do regular computation
+		//On other cycles, calculate interaction between force applier and particles
 		else if (forceApplierMasterList.size()) {
 			neightbourhoodGroupUpdate = (++neightbourhoodGroupUpdate) % neighbourhoodGroupCount;
-			//Calculate group effect on applier
-			for (auto applier : forceApplierMasterList[neighbourhoodGroupIncrement]) {
-				applier->update();
-			}
-			//Check if the force applier is still valid, c;ear dead force appliers
+			//Check if the force applier is still valid, clear dead force appliers
 			auto it = forceApplierMasterList[neighbourhoodGroupIncrement].begin();
 			while (it != forceApplierMasterList[neighbourhoodGroupIncrement].end()) {
 				if ((*it)->getFlag()) {
@@ -301,8 +316,25 @@ public:
 					it++;
 				}
 			}
-
 		}
+
+		//Update position of particles
+		mainParticleLock.lock();
+		auto it = mainParticleList.begin();
+		bool condition;
+		while (it != mainParticleList.end()) {
+			(*it)->particleLock.lock();
+			(*it)->updateParticle(totalWind);
+			condition = (((*it)->cycle / ANIMATION_FRAMES) >= particleTemplates[(*it)->particleType][(*it)->textureIdentifier].numberOfFrames || (*it)->deathFlag);
+			(*it)->particleLock.unlock();
+			if (condition) {
+				it = mainParticleList.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+		mainParticleLock.unlock();
 	}
 
 	int getParticleCount() {
@@ -317,18 +349,39 @@ public:
 		return runningTotal;
 	}
 
+	void renderParticles(int shift) {
+		mainParticleLock.lock();
+		SDL_Rect src;
+		SDL_Rect dst;
+		int frame;
+		for (auto particle : mainParticleList) {
+			particle->particleLock.lock();
+			frame = particle->cycle / ANIMATION_FRAMES;
+			cout << frame << endl;
+			if (frame < particleTemplates[particle->particleType][particle->textureIdentifier].numberOfFrames) {
+				src = particleTemplates[particle->particleType][particle->textureIdentifier].getCurrentFrameRect(frame);
+				dst = particleTemplates[particle->particleType][particle->textureIdentifier].getRenderRect(particle->position);
+				dst.x += shift;
+
+				SDL_RenderCopy(graphicsState->getGRenderer(),
+					particleTemplates[particle->particleType][particle->textureIdentifier].particleSpriteSheet,
+					&src,
+					&dst);
+			}
+			particle->particleLock.unlock();
+		}
+		mainParticleLock.unlock();
+	}
+
 	/*Spawns a particle, which will start interacting*/
 	void spawnParticle(CUS_Point spawnPosition, CUS_Point spawnVelocity, ParticleType particleType, float mass = 1) {
 		auto particle = new Particle(particleType, spawnPosition, spawnVelocity);
 		particle->textureIdentifier = random::randomInt(0, particleTemplates[particleType].size() - 1);
 		particle->mass = mass;
+		mainParticleLock.lock();
 		mainParticleList.push_back(shared_ptr<Particle>(particle));
+		mainParticleLock.unlock();
 	}
-
-	void renderParticles(int shift) {
-
-	}
-
 };
 
 #endif

@@ -226,7 +226,7 @@ void SlaveInstance::particler() {
 		if (particleMaster) {
 			startCyclePoint = chrono::high_resolution_clock::now();
 			cycle++;
-			particleMaster->grandParticleUpdate(startCyclePoint);
+			particleMaster->grandParticleUpdate(startCyclePoint, totalWindSum.load());
 			particleSlaveCount = particleMaster->getParticleCount();
 			particleMasterCount = particleMaster->getApplierCount();
 
@@ -248,6 +248,8 @@ void SlaveInstance::initialiseInstance(GraphicsState* graphicsState, TextRendere
 	this->graphicsState = graphicsState;
 	this->levelSettingsCurrent = currentSettings;
 	this->particleMaster = new ParticleManager(graphicsState);
+
+	totalWindSum.store({ 0,0 });
 
 	fpsContainer = new TextContainer(textRenderer);
 	fpsContainer->newTextEnt("dropped", " ", { (float)5, (float)5 }, sans28, white, topLeft, false,

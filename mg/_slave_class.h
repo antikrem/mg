@@ -76,6 +76,8 @@ protected:
 
 	//Particle manager
 	ParticleManager* particleMaster = NULL;
+	//Total wind for particle master
+	atomic<CUS_Point> totalWindSum;
 
 	//thread safe input interface, recall Input is trivially defined
 	atomic<Input> safeInput;
