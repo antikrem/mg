@@ -1,12 +1,12 @@
 from mg_ent_classes import *
 from os import path
-#from mg_popup import *
+from mg_ref import *
+from mg_popup import *
 import tkinter as tk
 
 def makeListOfEnemiesFromFile(path) :
     enemies = []
     toPull = 0;
-    
     with open(path, "r+") as file:
         lines = file.readlines()
         lines = [line.strip() for line in lines]
@@ -20,27 +20,24 @@ def makeListOfEnemiesFromFile(path) :
                 print("---")
             elif currentLine[0][0] == '/' and currentLine[0][1] == '/' :
                 print("---")
-            elif currentLine[0] == 'MOVE' :
+            elif len(currentLine) == 7 :
                 print(currentLine)
                 if not toPull == 0 :
-                    toPull.addMovementCommand(int(currentLine[1]), int(currentLine[2]), int(currentLine[3]), int(currentLine[4]),float(currentLine[5]), int(currentLine[6]), int(currentLine[7]), float(currentLine[8]))
+                    toPull.addMovementCommand(int(currentLine[0]), int(currentLine[1]), int(currentLine[2]), float(currentLine[3]), int(currentLine[4]), int(currentLine[5]), float(currentLine[6]))
                 else :
                     print("Movement Command added when there is no enemy selected")
-            elif currentLine[0] == 'ENEMY' :
+            elif len(currentLine) == 8 :
                 print(currentLine)
                 if toPull == 0 :
-                    print("Enemy caught")
-                    positionStart = CUS_Point(float(currentLine[5]), float(currentLine[6]))
-                    positionVelocity = CUS_Point(float(currentLine[7]), float(currentLine[8]))
-                    print("vel")
-                    print(positionVelocity._x)
-                    print(positionVelocity._y)
-                    toPull = EnemyEntity(int( currentLine[1]), currentLine[2], positionStart, positionVelocity, float(currentLine[3]), float(currentLine[4]) )
+                    print("Caught")
+                    positionStart = CUS_Point(float(currentLine[4]), float(currentLine[5]))
+                    positionVelocity = CUS_Point(float(currentLine[6]), float(currentLine[7]))
+                    toPull = EnemyEntity(int(currentLine[0]), currentLine[1], positionStart, positionVelocity)
                 else :
                     print("Enemy added when there is already an enemy not pushed")
-            elif currentLine[0] == 'DEATH' :
+            elif len(currentLine) == 1 :
                 print(currentLine)
-                toPull.setDeathCycle(int(currentLine[1]))
+                toPull.setDeathCycle(int(currentLine[0]))
                 enemies.append(toPull)
                 toPull = 0
             else :
@@ -48,5 +45,5 @@ def makeListOfEnemiesFromFile(path) :
         print(lineNo)
         return enemies
 
-def enemySort(enemy) :
-    return enemy._spawningCycle
+def populateLevelCanvas(currentCycle, animations, levelView) :
+    pass

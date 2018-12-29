@@ -80,7 +80,7 @@ public:
 		SDL_RenderSetScale(gRenderer, scale.x, scale.y);
 	}
 
-	SDL_Renderer* getGRenderer() {
+  	SDL_Renderer* getGRenderer() {
 		return gRenderer;
 	}
 

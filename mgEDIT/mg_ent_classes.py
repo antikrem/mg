@@ -1,69 +1,94 @@
 #classes that store values related to levels
 from mg_cus_struct import *
+import sys
 
 #stores a command that on starting frame will be applied
 class MovementCommand(object) :
-    #speed variables
-    _ignoreAngle = False
-    _forceAngle = False
-    _angle = 0
-    #speed variables
-    _ignoreSpeed = False
-    _forceSpeed = False
-    _speed = 0
-
-    def __init__(self, ignoreAngle, forceAngle, angle, ignoreSpeed, forceSpeed, speed) :
+    def __init__(self, ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed) :
+        #speed variables
         self._ignoreAngle = ignoreAngle
         self._forceAngle = forceAngle
+        self._relativeToPlayer = relativeToPlayer
         self._angle = angle
+        #speed variables
         self._ignoreSpeed = ignoreSpeed
         self._forceSpeed = forceSpeed
         self._speed = speed
 
-class EnemyEntity(object) :
-    def __init__(self, spawningCycle, animationName, positionStart, velocityStart) :
-        #movement commands
-        self.__movementCommandsToUse = dict()
-        self.__movementCommandInUse = MovementCommand(False, False, 0, False, False, 0)
+class MovementCommander(object) :
+    def __init__(self, initialPosition, initialVelocity, spawningCycle) :
         self._spawningCycle = spawningCycle
-        self._deathCycle = 0
+        self._initialPosition = initialPosition
+        self._initialVelocity = initialVelocity
+        self._positionList = []
+        self._movementCommands = dict()
+        self._currentMovementCommand = MovementCommand(True, False, False, 0, True, False, 0)
+
+    def addMovementCommand(self, cycle, ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed) :
+        movementCommands[cycle] = MovementCommand(ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed)
+
+    def calculatePositions(self, lastCycle, playerPosition) :
+        position  =  self._initialPosition
+        velocity  =  self._initialVelocity
+        self._currentMovementCommand = MovementCommand(True, False, False, 0, True, False, 0)
+        temporaryVelocty = CUS_Polar(0,0)
+        for i in range(0,lastCycle) :
+            if i in self._movementCommands :
+                if not self._movementCommands[i]._ignoreAngle :
+                    self._currentMovementCommand._ignoreAngle = False
+                    self._currentMovementCommand._forceAngle = movementCommands[i]._forceAngle
+                    self._currentMovementCommand._relativeToPlayer = movementCommands[i]._relativeToPlayer
+                    self._currentMovementCommand._angle = movementCommands[i]._angle
+                if not self._movementCommands[i]._ignoreSpeed :
+                    self._currentMovementCommand._ignoreSpeed = False
+                    self._currentMovementCommand._forceSpeed = movementCommands[i]._forceSpeed
+                    self._currentMovementCommand._speed = movementCommands[i]._speed
+
+            temporaryVelocty = toPolar(velocity)
+            if not self._currentMovementCommand._ignoreSpeed :
+                if self._currentMovementCommand._forceSpeed :
+                    temporaryVelocty._magnitude = self._currentMovementCommand._speed
+                else :
+                    temporaryVelocty._magnitude += self._currentMovementCommand._speed
+            if not self._currentMovementCommand._ignoreAngle :
+                if not self._currentMovementCommand._relativeToPlayer :
+                    if self._currentMovementCommand._forceAngle :
+                        temporaryVelocty._angle = self._currentMovementCommand._angle
+                    else :
+                        temporaryVelocty._angle += self._currentMovementCommand._angle
+                else :
+                    if (self._currentMovementCommand._forceAngle) :
+                        temporaryVelocity.angle = position.getAngleToPoint(playerPosition) + self._currentMovementCommand._angle
+                    else :
+                        targetAngle = position.getAngleToPoint(playerPosition)
+                        print("pls implement me")
+                        #todo
+            self._positionList.append(position)
+            velocity = toPoint(temporaryVelocty)
+            position = position.add(velocity)
+
+        for i in self._positionList :
+            print(i)
+        print("done")
+
+    def pullPositionAtCycle(self, cycle) :
+        return self._positionList[cycle-self._spawningCycle]
+                            
+class EnemyEntity(MovementCommander) :
+    def __init__(self, spawningCycle, animationName, positionStart, velocityStart, hitbox, hitpoints) :
+        #movement commands
+        self._deathCycle = sys.maxsize
+        self._deathInitialised = False
+        self._hitpoints = hitpoints
+        self._hitpbox = hitbox
+        super().__init__(positionStart, velocityStart, spawningCycle)
         
         self._animationName = animationName
-        self._positions = []
-        self._velocity = []
-        self._positions.append(positionStart)
-        self._velocity.append(velocityStart)
 
     def setDeathCycle(self, deathCycle) :
+        self._deathInitialised = True
         self._deathCycle = deathCycle
-    
-    def addMovementCommand(self, startingFrame, ignoreAngle, forceAngle, angle, ignoreSpeed, forceSpeed, speed) :
-        self.__movementCommandsToUse[startingFrame] = MovementCommand(ignoreAngle, forceAngle, angle, ignoreSpeed, forceSpeed, speed)
 
-    def populatePosition(self) :
-        counter = -1
 
-        while (counter <= self._deathCycle) :
-            counter+=1
-            
-            if counter in self.__movementCommandsToUse:
-                if not self.__movementCommandsToUse[counter]._ignoreAngle:
-                    self.__movementCommandInUse._forceAngle = self.__movementCommandsToUse[counter]._forceAngle
-                    self.__movementCommandInUse._angle = self.__movementCommandsToUse[counter]._angle
-                if not self.__movementCommandsToUse[counter]._ignoreSpeed:
-                    self.__movementCommandInUse._forceSpeed = self.__movementCommandsToUse[counter]._forceSpeed
-                    self.__movementCommandInUse._speed = self.__movementCommandsToUse[counter]._speed
-
-            tempVelocity = toPolar(self._velocity[-1])
-            if self.__movementCommandInUse._forceAngle :
-                tempVelocity._angle = self.__movementCommandInUse._angle
-            else :
-                tempVelocity._angle += self.__movementCommandInUse._angle
-                    
-            if self.__movementCommandInUse._forceSpeed :
-                tempVelocity._magnitude = self.__movementCommandInUse._speed
-            else :
-                tempVelocity._magnitude += self.__movementCommandInUse._speed
-
-            self._velocity.append(toPoint(tempVelocity))
-            self._positions.append(self._positions[-1].add(self._velocity[-1]))
+def enemySort(obj) :
+    return obj._spawningCycle

@@ -192,7 +192,7 @@ void SlaveInstance::renderer() {
 						fpsContainer->updateTextByKey("fps", "fps: " + to_string((int)average));
 						fpsContainer->updateTextByKey("dropped", "drop: " + to_string((float)cycleDrawCounter/(3333* cyclesPerDraw)) + "%");
 						fpsContainer->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
-						fpsContainer->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " with " + to_string(particleSlaveCount) + " at "+ to_string(particleLoad) + "%");
+						fpsContainer->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at "+ to_string(particleLoad) + "%");
 						fpsContainer->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
 						fpsContainer->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
 						cycleDrawCounter = 0;
@@ -229,6 +229,7 @@ void SlaveInstance::particler() {
 			particleMaster->grandParticleUpdate(startCyclePoint, totalWindSum.load());
 			particleSlaveCount = particleMaster->getParticleCount();
 			particleMasterCount = particleMaster->getApplierCount();
+			particleGroupCount = particleMaster->getNumberOfGroups();
 
 			currentCyclePoint = chrono::high_resolution_clock::now();
 			unsigned int i = (unsigned int)(chrono::duration_cast<std::chrono::nanoseconds>(currentCyclePoint - startCyclePoint)).count();

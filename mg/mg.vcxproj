@@ -147,6 +147,7 @@
     <ClInclude Include="graphics_state.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="level_enum.h" />
+    <ClInclude Include="light_master.h" />
     <ClInclude Include="listed_entities.h" />
     <ClInclude Include="movement_commander.h" />
     <ClInclude Include="parallax.h" />

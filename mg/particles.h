@@ -17,7 +17,7 @@
 ///Particle constants
 //There are two components to interaction between a particle and a force applier
 //A particle will be affected by the distance from a force applier
-//The force appplier will slightly repel nearby particles, displacing them based on mass and also velocity
+//The force appplier will slightly repel nearby particles, displacing them based on mass and also velocity and acceleration of applier
 //Distance to particle inversly scale the strength of proximity displacement
 //This is the base distance of how far particles are effected
 #define PROXIMITY_DISPLACEMENT F(20)
@@ -33,6 +33,9 @@
 
 //The number of cycles a particles frame of animation is shown
 #define ANIMATION_FRAMES 100
+
+//When wind affects particles it is scaled by this constant
+#define WIND_COEFFICIENT 0.2f
 
 //different types of particles
 enum ParticleType {
@@ -65,7 +68,15 @@ struct Particle {
 
 	void updateParticle(CUS_Point totalWind) {
 		cycle++;
-		position += velocity;
+		velocity += (totalWind * WIND_COEFFICIENT);
+		position += velocity * mass;
+		if (position.x > WORK_SPACE_X + 10 ||
+			position.x < -10 ||
+			position.y > WORK_SPACE_Y + 10 ||
+			position.y < -10
+			) {
+			deathFlag = true;
+		}
 	}
 };
 
@@ -192,7 +203,7 @@ public:
 			maxVelocity = velocity.toPolarMagnitude();
 	}
 
-	//This updates the velocity of the particle based on force applier interation
+	//This updates the velocity of the particle based on force applier interaction
 	void update() {
 		//add displacement force
 		for (auto particle : localParticles) {
@@ -250,15 +261,25 @@ class ParticleManager : public ThreadSafe {
 	//forceApplierMasterList[i] is the i-th neighbourhood
 	vector<vector<ForceApplier*>> forceApplierMasterList;
 
-	//Sets up particle manager to use this many groups
+	/*Sets up particle manager to use this many groups
+	Will reallocate existing force appliers
+	*/
 	void setUpGroups(unsigned int numberOfGroups) {
-		if (numberOfGroups < forceApplierMasterList.size()) {
-
-		}
-		else if (numberOfGroups > forceApplierMasterList.size()) {
-			for (unsigned int i = forceApplierMasterList.size(); i < numberOfGroups; i++) {
-				vector<ForceApplier *> toPush;
-				forceApplierMasterList.push_back(toPush);
+		if (numberOfGroups != forceApplierMasterList.size()) {
+			vector<ForceApplier*> toPush;
+			for (auto i : forceApplierMasterList) {
+				toPush.insert(toPush.end(), i.begin(), i.end());
+			}
+			forceApplierMasterList.clear();
+			int sizeOfGroup = toPush.size() / numberOfGroups;
+			for (unsigned int i = 0; i < numberOfGroups; i++) {
+				vector<ForceApplier*> to;
+				forceApplierMasterList.push_back(to);
+			}
+			int allocator = 0;
+			for (unsigned int i = 0; i < toPush.size(); i++) {
+				allocator = (++allocator) % numberOfGroups;
+				forceApplierMasterList[allocator].push_back(toPush[i]);
 			}
 		}
 		neighbourhoodGroupCount = numberOfGroups;
@@ -298,7 +319,7 @@ public:
 				applier->recalculateMaximumRange();
 				for (auto particle : mainParticleList) {
 					if (particle->position.getDistanceToPoint(applier->getPosition()) < applier->getRange()) {
-
+						applier->addAParticle(particle);
 					}
 				}
 			}
@@ -381,6 +402,10 @@ public:
 		mainParticleLock.lock();
 		mainParticleList.push_back(shared_ptr<Particle>(particle));
 		mainParticleLock.unlock();
+	}
+
+	int getNumberOfGroups() {
+		return neighbourhoodGroupCount;
 	}
 };
 

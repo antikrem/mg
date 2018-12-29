@@ -157,6 +157,10 @@ private:
 			upcomingEnemyList.push_back(enemy);
 
 		particleMaster->spawnParticle({ 500,500 }, { 0,0 }, particle_gold);
+		particleMaster->spawnParticle({ 600,400 }, { 0,0 }, particle_gold);
+		particleMaster->spawnParticle({ 700,300 }, { 0,0 }, particle_gold);
+		particleMaster->spawnParticle({ 800,200 }, { 0,0 }, particle_gold);
+		particleMaster->spawnParticle({ 900,100 }, { 0,0 }, particle_gold);
 	}
 
 	void memFree() {
@@ -183,6 +187,7 @@ private:
 		//Check command list
 		computeFromCommandList();
 
+		CUS_Point windToStore;
 		enemyEntities.lock();
 		auto it = upcomingEnemyList.begin();
 		enemyEntities.unlock();
@@ -206,6 +211,9 @@ private:
 
 		//Manage windspeed
 		windSpeed = baseWindSpeed + burstWindSpeed;
+		windToStore = toPoint(windSpeed);
+		windToStore.y += planeSpeed;
+		totalWindSum.store(windToStore);
 		burstDuration--;
 		//If there is no burst,
 		if (currentBurst < 0) {
@@ -393,7 +401,6 @@ private:
 				levelSettingsCurrent->buttonFlag = pause;
 			}
 		}
-
 	}
 
 	void renderCycle() {

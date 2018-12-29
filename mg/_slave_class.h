@@ -65,6 +65,7 @@ protected:
 	atomic<float> particleLoad = 0;
 	atomic<int> particleMasterCount = 0;
 	atomic<int> particleSlaveCount = 0;
+	atomic<int> particleGroupCount = 0;
 
 	//Weather report draw variables
 	atomic<int> weatherToReport = 0;

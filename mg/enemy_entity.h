@@ -34,7 +34,7 @@ protected:
 
 public:
 	EnemyEntity(int spawningCycle, string animationName, float hitbox, int health,
-		CUS_Point startingPosition, CUS_Polar startingVelocity = { 0,0 }) {
+		CUS_Point startingPosition, CUS_Point startingVelocity) {
 		this->spawningCycle = spawningCycle;
 
 		setAnimationSet( getFromStore(animationName) );
@@ -44,13 +44,12 @@ public:
 		this->health = this->maxHealth;
 
 		this->position = startingPosition;
-		updateSartingPosition(startingPosition);
-		this->velocity = toPoint(startingVelocity);
+		updateStartingPosition(startingPosition);
+		this->velocity = startingVelocity;
 		updateBox();
 	}
 
 	~EnemyEntity() {
-
 	}
 
 	void update(CUS_Point playerPosition) {
@@ -151,7 +150,7 @@ static void pullEnemies(vector<EnemyEntity*>* enemyVec, LevelSettings* levelSett
 				stof(lineVec[3]),
 				stoi(lineVec[4]),
 				{ stof(lineVec[5]), stof(lineVec[6]) },
-				{ stof(lineVec[7]), -1 * stof(lineVec[8]) + 180 }
+				{ stof(lineVec[7]), stof(lineVec[8]) }
 			);
 		}
 		else if (lineVec.size() == 2 && lineVec[0] == "DEATH") {

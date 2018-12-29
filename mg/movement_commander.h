@@ -48,7 +48,7 @@ public:
 		upcomingUpdates[startingFrame] = currentUpdate;
 	}
 
-	void updateSartingPosition(CUS_Point temporaryPosition) {
+	void updateStartingPosition(CUS_Point temporaryPosition) {
 		this->temporaryPosition = temporaryPosition;
 	}
 
@@ -67,7 +67,6 @@ public:
 				currentUpdate.ignoreSpeed = false;
 				currentUpdate.speed = upcomingUpdates[internalMovementCycle].speed;
 				currentUpdate.forceSpeed = upcomingUpdates[internalMovementCycle].forceSpeed;
-				currentUpdate.relativeToPlayer = upcomingUpdates[internalMovementCycle].relativeToPlayer;
 			}
 		}
 

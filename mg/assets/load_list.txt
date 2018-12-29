@@ -13,4 +13,4 @@ bullet_sprites\\player\\bullet_spr.png idle 16 20
 
 //PowerUps
 base_powerup
-power_ups//base.bmp idle 40 20
+power_ups//base.png idle 40 20
