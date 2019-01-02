@@ -15,6 +15,7 @@ Also can do lightning, which i guess is cool*/
 #include "graphics_state.h"
 #include "constants.h"
 #include "random.h"
+#include "light_master.h"
 
 #include <vector>
 
@@ -45,7 +46,6 @@ private:
 	WeatherType weatherType = noweather;
 
 	SDL_Texture* masterRainTexture[2] = { NULL,NULL };
-	SDL_Texture* blackTexture = NULL;
 	SDL_Point baseSize;
 	SDL_Renderer* renderer = NULL;
 
@@ -58,20 +58,15 @@ private:
 	CUS_Point totalDriftMiddle = { 0,0 };
 	CUS_Point totalDriftBelow = { 0,0 };
 
-	float weatherFade;
-
 public:
 	WeatherEffectManager(GraphicsState* graphicsState, WeatherType weatherType) {
 		this->graphicsState = graphicsState;
 		this->weatherType = weatherType;
 		if (weatherType == rain) {
-			weatherFade = 1.0f;
 			renderer = graphicsState->getGRenderer();
-			SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\black.png");
-			blackTexture = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-			SDL_FreeSurface(temporarySurfaceStorage);
+			
 
-			temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
+			SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
 			masterRainTexture[0] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
 			baseSize.x = temporarySurfaceStorage->w;
 			baseSize.y = temporarySurfaceStorage->h;
@@ -118,20 +113,13 @@ public:
 	~WeatherEffectManager() {
 		SDL_DestroyTexture(masterRainTexture[0]);
 		SDL_DestroyTexture(masterRainTexture[1]);
-		SDL_DestroyTexture(blackTexture);
 	}
 
-	void update(float levelScroll, CUS_Polar windspeed) {
-		//Change fade
-		if (weatherType && weatherFade < 1.0f) {
-			weatherFade += WEATHER_DARK_TRANSITION;
-		}
-		else if (!weatherType && weatherFade  > 0) {
-			weatherFade -= WEATHER_DARK_TRANSITION;
-		}
-		else if (weatherType && weatherFade < 0) {
-			weatherType = noweather;
-		}
+	void update(float levelScroll, CUS_Polar windspeed, LightMaster* lightMaster) {
+		if (weatherType == noweather)
+			lightMaster->setLightMode(LMNormal);
+		if (weatherType == rain)
+			lightMaster->setLightMode(LMRain);
 
 		//Delete any weather effects if the current setting doesn't allow it
 		if (graphicsState->getWeatherVolume() < medium)
@@ -391,18 +379,6 @@ public:
 		drawPos.w = 400;
 		drawPos.h = 400;
 
-		//Draw blackground
-		if (weatherFade > 0) {
-			SDL_SetTextureAlphaMod(blackTexture, (Uint8)(100 * weatherFade));
-			for (int i = 0; i < (WORK_SPACE_X + 400); i += 400) {
-				for (int j = 0; j < (WORK_SPACE_Y + 400); j += 400) {
-					drawPos.x = i;
-					drawPos.y = j;
-					SDL_RenderCopyEx(graphicsState->getGRenderer(), blackTexture, NULL, &drawPos, 0, NULL, SDL_FLIP_NONE);
-				}
-			}
-		}
-
 		if (graphicsState->getWeatherVolume() > low) {
 			for (auto effect : weatherEffectsAbove) {
 				drawPos.w = (int)(baseSize.x * effect.scale);
@@ -421,18 +397,6 @@ public:
 		drawPos.w = 400;
 		drawPos.h = 400;
 
-		//Draw blackground
-		if (weatherFade > 0) {
-			SDL_SetTextureAlphaMod(blackTexture, (Uint8)(100 * weatherFade));
-			for (int i = 0; i < (WORK_SPACE_X + 400); i += 400) {
-				for (int j = 0; j < (WORK_SPACE_Y + 400); j += 400) {
-					drawPos.x = i;
-					drawPos.y = j;
-					SDL_RenderCopyEx(graphicsState->getGRenderer(), blackTexture, NULL, &drawPos, 0, NULL, SDL_FLIP_NONE);
-				}
-			}
-		}
-
 		if (graphicsState->getWeatherVolume() > high) {
 			for (auto effect : weatherEffectsBelow) {
 				drawPos.w = (int)(baseSize.x * effect.scale);
@@ -450,18 +414,6 @@ public:
 		SDL_Rect drawPos;
 		drawPos.w = 400;
 		drawPos.h = 400;
-
-		//Draw blackground
-		if (weatherFade > 0) {
-			SDL_SetTextureAlphaMod(blackTexture, (Uint8)(100 * weatherFade));
-			for (int i = 0; i < (WORK_SPACE_X + 400); i += 400) {
-				for (int j = 0; j < (WORK_SPACE_Y + 400); j += 400) {
-					drawPos.x = i;
-					drawPos.y = j;
-					SDL_RenderCopyEx(graphicsState->getGRenderer(), blackTexture, NULL, &drawPos, 0, NULL, SDL_FLIP_NONE);
-				}
-			}
-		}
 
 		if (graphicsState->getWeatherVolume() > medium) {
 			for (auto effect : weatherEffectsMiddle) {

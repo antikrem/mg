@@ -6,6 +6,8 @@ To be used with _controller.cpp*/
 #include "_interactives.h"
 #include "_slave_class.h"
 
+#include "light_master.h"
+
 #include "weather.h"
 
 #include "entity_player.h"
@@ -51,6 +53,9 @@ private:
 	//Shift variables
 	float trueShift = 0;
 	atomic<int> shift = 0;
+
+	//Lightmaster control instance
+	LightMaster *lightMaster = NULL;
 
 	//BackgroundManager for this slave instance
 	BackgroundManager* backgroundManager = NULL;
@@ -124,6 +129,8 @@ private:
 		loadStoreLocal(graphicsState->getGRenderer(), levelSettingsCurrent, false);
 
 		dialogue = new Dialogue(textRenderer, levelSettingsCurrent);
+
+		lightMaster = new LightMaster(graphicsState);
 
 		//Create background
 		backgroundManager = new BackgroundManager(graphicsState->getGRenderer(), levelSettingsCurrent);
@@ -246,6 +253,11 @@ private:
 				burstDuration = (int) (random::randomFloat(0.7f, 1.4f) * 3000);
 			}
 		}
+
+		//Update Lighting Engine
+		lightMaster->lock();
+		lightMaster->update();
+		lightMaster->unlock();
 		
 		//Update Background manager
 		backgroundManager->lock();
@@ -259,7 +271,7 @@ private:
 
 		//Update weather
 		weatherMasterLock.lock();
-		weatherEffectManager->update(planeSpeed, windSpeed);
+		weatherEffectManager->update(planeSpeed, windSpeed, lightMaster);
 		for (int i = 0; i < 3; i++)
 			numberOfWeatherClips[i] = weatherEffectManager->getEffectsCountByIndex(i);
 		weatherToReport = weatherEffectManager->getWeatherType();
@@ -409,6 +421,10 @@ private:
 		backgroundManager->drawBackground(shift);
 		backgroundManager->unlock();
 
+		lightMaster->lock();
+		lightMaster->drawLightLevel(0);
+		lightMaster->unlock();
+
 		//Draw weather back
 		weatherMasterLock.lock();
 		weatherEffectManager->drawBackWeather(shift);
@@ -438,6 +454,10 @@ private:
 		}
 		anonEnts.unlock();
 
+		lightMaster->lock();
+		lightMaster->drawLightLevel(1);
+		lightMaster->unlock();
+
 		//Draw player bullets
 		playerBullets.lock();
 		for (auto i : playerBullets.getEntList()) {
@@ -464,6 +484,10 @@ private:
 		drawBoxEntity(player->renderCopy(), shift, FULLNORMAL, FULLSIZE);
 		player->unlock();
 
+		lightMaster->lock();
+		lightMaster->drawLightLevel(2);
+		lightMaster->unlock();
+
 		//Draw particles
 		particleMaster->renderParticles(shift);
 
@@ -476,6 +500,10 @@ private:
 		weatherMasterLock.lock();
 		weatherEffectManager->drawAboveWeather(shift);
 		weatherMasterLock.unlock();
+
+		lightMaster->lock();
+		lightMaster->drawLightLevel(3);
+		lightMaster->unlock();
 
 		//Draw overlay
 		SDL_RenderCopy(graphicsState->getGRenderer(), overlay, NULL, NULL);

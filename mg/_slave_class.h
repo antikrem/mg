@@ -1,9 +1,6 @@
 #ifndef __SLAVE_CLASS_H_INCLUDED__
 #define __SLAVE_CLASS_H_INCLUDED__
 
-#define FULLNORMAL 0
-#define FULLDARK 255
-#define FULLBRIGHT -255
 
 #define FULLSIZE 0
 
