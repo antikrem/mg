@@ -16,6 +16,7 @@
 #include "listed_entities.h"
 #include "text_entity.h"
 #include "parallax.h"
+#include "sound.h"
 
 using namespace std;
 

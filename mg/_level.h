@@ -18,6 +18,8 @@ To be used with _controller.cpp*/
 
 #include "text_dialogue.h"
 
+#include "sound.h"
+
 #include <locale> 
 
 #define SHIFTVELOCITY 4.5F
@@ -168,9 +170,12 @@ private:
 		particleMaster->spawnParticle({ 700,300 }, { 0,0 }, particle_gold);
 		particleMaster->spawnParticle({ 800,200 }, { 0,0 }, particle_gold);
 		particleMaster->spawnParticle({ 900,100 }, { 0,0 }, particle_gold);
+
+		playMusic("kino");
 	}
 
 	void memFree() {
+		stopMusic(0);
 		delete backgroundManager;
 		backgroundManager = NULL;
 

@@ -154,6 +154,7 @@ public:
 
 			//If shifted, check scrict bounds
 			if (playIn.shift) {
+				playSound("shoot_tick", SCplayerFire);
 				if (position.x < abs(shift+4))
 					position.x = F(abs(shift + 4));
 				if (position.x > (abs(shift + 4) + RENDERED_X))
@@ -229,6 +230,10 @@ class Sorceress : public PlayerEntity {
 	float turretOffset = 0;
 
 	float turreSpeed = (float)1;
+
+	//Use to catch the flip of shooting
+	bool lastShooter = false;
+	bool currentShooter = false;
 
 public:
 	Sorceress() {
@@ -312,8 +317,11 @@ public:
 			}
 		}
 
+		lastShooter = currentShooter;
+		currentShooter = false;
+		if (playIn.shoot)
+			currentShooter = true;
 		if (internalCycles % 20 == 0 && playIn.shoot) {
-
 			CUS_Point startPos = { (float)(position.x + velocity.x * 2.5), (float)(position.y - 138) };
 
 			CUS_Polar temporarypointspeed = { -310 * turretOffset, 180 + 35 };
@@ -348,6 +356,11 @@ public:
 			bulletTable[4] = temp4;
 			bulletTable[5] = temp5;
 		}
+
+		if (lastShooter == false && currentShooter == true)
+			playLoopedSound("shoot_tick", SCplayerFire);
+		else if (lastShooter == true && currentShooter == false)
+			stopChannel(SCplayerFire, 150);
 	}
 
 };

@@ -33,6 +33,7 @@ int main(int argc, char* args[]) {
 	//Initialise
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
+	sound_ini();
 
 	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG)) {
 		err::logMessage("Error: SDL_Image failed to load, check .dlls or reinstall");
@@ -48,6 +49,8 @@ int main(int argc, char* args[]) {
 	SlaveInstance* currentState = NULL;
 	LevelSettings* levelSettings = new LevelSettings;
 
+	loadSoundAndMusic(NULL);
+
 	//Current key settings
 	KeyBind* keyBind = new KeyBind;
 	//Update from file
@@ -56,7 +59,6 @@ int main(int argc, char* args[]) {
 	//Stores last event
 	SDL_Event evt;
 
-	
 	while (gameState) {
 		//Catch last event, store at evt
 		SDL_PollEvent(&evt);
@@ -120,6 +122,7 @@ int main(int argc, char* args[]) {
 	
 	err::endLog();
 
+//	sound_end();
 	SDL_Quit();
 	TTF_Quit();
 

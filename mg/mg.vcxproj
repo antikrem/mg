@@ -70,12 +70,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_mixer-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_mixer-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\GayCunt2525\Desktop\mg\SDL2_mixer-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\include;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\include;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\GayCunt2525\Desktop\mg\SDL2_mixer-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_image-2.0.4\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2_ttf-2.0.14\lib\x86;C:\Users\GayCunt2525\Desktop\mg\SDL2-2.0.9\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -86,7 +86,7 @@
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_ENABLE_ATOMIC_ALIGNMENT_FIX</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -111,7 +111,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;SDL2_image.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -154,6 +154,7 @@
     <ClInclude Include="particles.h" />
     <ClInclude Include="powerup.h" />
     <ClInclude Include="random.h" />
+    <ClInclude Include="sound.h" />
     <ClInclude Include="text_dialogue.h" />
     <ClInclude Include="thread_safe.h" />
     <ClInclude Include="str_kit.h" />
@@ -177,6 +178,7 @@
     <ClCompile Include="listed_entities.cpp" />
     <ClCompile Include="parallax.cpp" />
     <ClCompile Include="random.cpp" />
+    <ClCompile Include="sound.cpp" />
     <ClCompile Include="str_kit.cpp" />
     <ClCompile Include="text_entity.cpp" />
     <ClCompile Include="thread_safe.cpp" />
