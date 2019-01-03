@@ -167,7 +167,7 @@ static void pullEnemies(vector<EnemyEntity*>* enemyVec, LevelSettings* levelSett
 		}
 	}
 
-	if (!toPull) {
+	if (toPull) {
 		err::logMessage("line 202 EnemyNotPushed");
 	}
 }
