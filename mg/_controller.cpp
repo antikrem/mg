@@ -6,7 +6,7 @@
 #include <thread>
 
 /*Returns current key pressess based on keyBind Values*/
-Input catchInput(KeyBind* keyBind) {
+Input catchInput(KeyBind* keyBind, SDL_Event* evt, char* nextIn) {
 	Input currentInputState;
 	const Uint8* keystate;
 
@@ -22,6 +22,30 @@ Input catchInput(KeyBind* keyBind) {
 	currentInputState.shift = keystate[keyBind->shiftCode];
 	currentInputState.enter = keystate[keyBind->enterCode];
 	currentInputState.esc = keystate[keyBind->escCode];
+	currentInputState.console = keystate[keyBind->consoleCode];
+
+	//A key has been pressed and the party begins
+	if (evt->type == SDL_KEYDOWN) {
+		SDL_Keysym key = evt->key.keysym;
+		//Input character buffer is clear
+		if (*nextIn == (char)0) {
+			//Catch type keys and mod with shift
+			if ((key.sym >= SDLK_a && key.sym <= SDLK_z) || (key.sym >= SDLK_0 && key.sym <= SDLK_9)) {
+				if (key.mod & KMOD_LSHIFT || key.mod & KMOD_RSHIFT) {
+					*nextIn = (char)key.sym - 32;
+				}
+				else {
+					*nextIn = (char)key.sym;
+				}
+			}
+			//Take these keys direct, they are special af
+			else if (key.sym == SDLK_SPACE || key.sym == SDLK_BACKSPACE || key.sym == SDLK_RETURN) {
+				*nextIn = (char)key.sym;
+			}
+
+		}
+	}
+
 
 	return currentInputState;
 }
@@ -83,7 +107,7 @@ int main(int argc, char* args[]) {
 		}
 
 		if (currentState != NULL) {
-			currentState->setCurrentInput( catchInput(keyBind) );
+			currentState->setCurrentInput( catchInput(keyBind, &evt, currentState->getConsoleCharInput()) );
 		}
 
 		//If end level flag is true, attempt to end the level

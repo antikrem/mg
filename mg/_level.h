@@ -120,6 +120,11 @@ private:
 					weatherEffectManager->stopWeather();
 				}
 			}
+			else if (lineVec[1] == "STOP") {
+				if (weatherEffectManager) {
+					weatherEffectManager->stopWeather();
+				}
+			}
 		}
 	}
 
@@ -171,7 +176,9 @@ private:
 		particleMaster->spawnParticle({ 800,200 }, { 0,0 }, particle_gold);
 		particleMaster->spawnParticle({ 900,100 }, { 0,0 }, particle_gold);
 
-		playMusic("kino");
+		//playMusic("kino");
+
+		err::logLevelStart(levelSettingsCurrent);
 	}
 
 	void memFree() {

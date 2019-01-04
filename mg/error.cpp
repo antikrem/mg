@@ -121,10 +121,10 @@ namespace err {
 		appendToErrorFile("Average CPS was: " + std::to_string(cps));
 	}
 
-	void logLevelStart(LevelSettings level) {
+	void logLevelStart(LevelSettings* level) {
 		appendToErrorFile("LEVEL STARTED WITH THE FOLLOWING SETTINGS:");
-		appendToErrorFile("Level:" + std::to_string(level.level));
-			appendToErrorFile("Player Index: " + to_string(level.currentCharacter));
+		appendToErrorFile("Level:" + std::to_string(level->level));
+		appendToErrorFile("Player Index: " + to_string(level->currentCharacter));
 		appendToErrorFile("");
 	}
 }

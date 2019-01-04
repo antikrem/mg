@@ -1,6 +1,7 @@
 #ifndef __SLAVE_CLASS_H_INCLUDED__
 #define __SLAVE_CLASS_H_INCLUDED__
 
+#define NUMBER_OF_CONSOLE_MESSAGES 5
 
 #define FULLSIZE 0
 
@@ -77,6 +78,17 @@ protected:
 	ParticleManager* particleMaster = NULL;
 	//Total wind for particle master
 	atomic<CUS_Point> totalWindSum;
+
+	//Console Variables
+	bool inConsole = false;
+	int consoleCounter = 0;
+	char nextIn = (char)0;
+	string consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES];
+	string currentConsoleLine;
+	TextContainer* consoleContainer = NULL;
+
+	/*A function that computes the current cycles input into console update*/
+	void consoleUpdate();
 
 	//thread safe input interface, recall Input is trivially defined
 	atomic<Input> safeInput;
@@ -197,6 +209,11 @@ public:
 	void initialiseInstance(GraphicsState* graphicsState, TextRenderer* textRenderer, LevelSettings* currentSettings);
 
 	void setCurrentInput(Input newInput);
+
+	/*get a pointer to console character input*/
+	char* getConsoleCharInput() {
+		return &nextIn;
+	}
 
 };
 #endif

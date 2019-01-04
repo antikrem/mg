@@ -25,7 +25,18 @@ static string weather2String(int wt) {
 }
 
 Input SlaveInstance::getInput() {
-	return(safeInput.load());
+	auto press = safeInput.load();
+	if (inConsole) {
+		press.up = false;
+		press.down = false;
+		press.left = false;
+		press.right = false;
+		press.shift = false;
+		press.dash = false;
+		press.shoot = false;
+		press.special = false;
+	}
+	return(press);
 }
 
 void SlaveInstance::initialise() {
@@ -93,6 +104,43 @@ void SlaveInstance::loadCommandList() {
 	}
 }
 
+void SlaveInstance::consoleUpdate() {
+	if (nextIn != (char)0) {
+		//In console so input is processed
+		if (inConsole) {
+			//Input has been released and needs to be added to current console update
+			char freshInput = nextIn;
+			nextIn = (char)0;
+			//First check backspaces
+			if ((int)freshInput == 8 && currentConsoleLine.size() > 0) {
+				cout << "erase" << endl;
+				currentConsoleLine = currentConsoleLine.substr(0, currentConsoleLine.size() - 1);
+			}
+			//Check return, process console line
+			else if (freshInput == SDLK_RETURN) {
+				if (currentConsoleLine.size() > 0) {
+					processCommand(currentConsoleLine);
+					currentConsoleLine.clear();
+				}
+			}
+			//Check spaces
+			else if (freshInput == SDLK_SPACE) {
+				currentConsoleLine.append(" ");
+			}
+			//This only leaves characters to add
+			else {
+				currentConsoleLine.append(string(1, freshInput));
+			}
+			
+		}
+		//Not in console so input ignores
+		else {
+			nextIn = (char)0;
+		}
+	}
+	
+}
+
 void SlaveInstance::killThreads() {
 	endSlave = true;
 }
@@ -117,8 +165,18 @@ void SlaveInstance::computer() {
 
 		cycle++;
 		err::setLoggingCycle(cycle);
+
+		//Handle console
+		consoleCounter--;
+		if (getInput().console && consoleCounter < 0) {
+			inConsole = !inConsole;
+			consoleCounter = 100;
+		}
+		consoleUpdate();
+
 		if (!stuckCounter)
 			counter++;
+
 		computeCycle();
 
 		if not(cycle % 3)

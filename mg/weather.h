@@ -59,60 +59,68 @@ private:
 	CUS_Point totalDriftBelow = { 0,0 };
 
 public:
+	void startRain() {
+		weatherType = rain;
+		SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
+		masterRainTexture[0] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+		baseSize.x = temporarySurfaceStorage->w;
+		baseSize.y = temporarySurfaceStorage->h;
+		SDL_FreeSurface(temporarySurfaceStorage);
+
+		temporarySurfaceStorage = IMG_Load("assets\\weather\\rain1.png");
+		masterRainTexture[1] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+		SDL_FreeSurface(temporarySurfaceStorage);
+
+		WeatherEffect effect;
+		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(ABOVE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
+			for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(ABOVE_SCALE * baseSize.y / 2 + random::randomFloat(-20, 20))) {
+				effect.position = { i, j };
+				effect.scale = ABOVE_SCALE * random::randomFloat(F(0.95), F(1));
+				effect.verticalskew = ABOVE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+				effect.frameNumber = random::randomInt(0, 1);
+				weatherEffectsAbove.push_back(effect);
+			}
+		}
+
+		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(baseSize.x / 2 + random::randomFloat(-20, 20))) {
+			for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(baseSize.y / 2 + random::randomFloat(-20, 20))) {
+				effect.position = { i, j };
+				effect.scale = random::randomFloat(F(0.95), F(1));
+				effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+				effect.frameNumber = random::randomInt(0, 1);
+				weatherEffectsMiddle.push_back(effect);
+			}
+		}
+
+		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(BELOW_SCALE * baseSize.x / 2 + random::randomFloat(0, 50))) {
+			for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(BELOW_SCALE * baseSize.y / 2 + random::randomFloat(0, 50))) {
+				effect.position = { i, j };
+				effect.scale = BELOW_SCALE * random::randomFloat(F(0.95), F(1));
+				effect.verticalskew = BELOW_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+				effect.frameNumber = random::randomInt(0, 1);
+				weatherEffectsBelow.push_back(effect);
+			}
+		}
+	}
+
 	WeatherEffectManager(GraphicsState* graphicsState, WeatherType weatherType) {
 		this->graphicsState = graphicsState;
 		this->weatherType = weatherType;
+		renderer = graphicsState->getGRenderer();
 		if (weatherType == rain) {
-			renderer = graphicsState->getGRenderer();
-			
-
-			SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
-			masterRainTexture[0] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-			baseSize.x = temporarySurfaceStorage->w;
-			baseSize.y = temporarySurfaceStorage->h;
-			SDL_FreeSurface(temporarySurfaceStorage);
-
-			temporarySurfaceStorage = IMG_Load("assets\\weather\\rain1.png");
-			masterRainTexture[1] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-			SDL_FreeSurface(temporarySurfaceStorage);
-
-			WeatherEffect effect;
-			for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(ABOVE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
-				for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(ABOVE_SCALE * baseSize.y / 2 + random::randomFloat(-20, 20))) {
-					effect.position = { i, j };
-					effect.scale = ABOVE_SCALE * random::randomFloat(F(0.95), F(1));
-					effect.verticalskew = ABOVE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
-					effect.frameNumber = random::randomInt(0, 1);
-					weatherEffectsAbove.push_back(effect);
-				}
-			}
-
-			for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(baseSize.x / 2 + random::randomFloat(-20, 20))) {
-				for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(baseSize.y / 2 + random::randomFloat(-20, 20))) {
-					effect.position = { i, j };
-					effect.scale = random::randomFloat(F(0.95), F(1));
-					effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
-					effect.frameNumber = random::randomInt(0, 1);
-					weatherEffectsMiddle.push_back(effect);
-				}
-			}
-
-			for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(BELOW_SCALE * baseSize.x / 2 + random::randomFloat(0, 50))) {
-				for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(BELOW_SCALE * baseSize.y / 2 + random::randomFloat(0, 50))) {
-					effect.position = { i, j };
-					effect.scale = BELOW_SCALE * random::randomFloat(F(0.95), F(1));
-					effect.verticalskew = BELOW_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
-					effect.frameNumber = random::randomInt(0, 1);
-					weatherEffectsBelow.push_back(effect);
-				}
-			}
-
+			startRain();
 		}
 	}
 
 	~WeatherEffectManager() {
-		SDL_DestroyTexture(masterRainTexture[0]);
-		SDL_DestroyTexture(masterRainTexture[1]);
+		if (masterRainTexture[0]) {
+			SDL_DestroyTexture(masterRainTexture[0]);
+			masterRainTexture[0] = NULL;
+		}
+		if (masterRainTexture[1]) {
+			SDL_DestroyTexture(masterRainTexture[1]);
+			masterRainTexture[1] = NULL;
+		}
 	}
 
 	void update(float levelScroll, CUS_Polar windspeed, LightMaster* lightMaster) {

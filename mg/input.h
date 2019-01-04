@@ -17,7 +17,7 @@ struct Input {
 	bool special = false;
 	bool enter = false;
 	bool esc = false;
-
+	bool console = false;
 
 	bool operator==(Input& rhs);
 
@@ -35,6 +35,7 @@ struct KeyBind {
 	SDL_Scancode shiftCode = SDL_SCANCODE_LCTRL;
 	SDL_Scancode enterCode = SDL_SCANCODE_RETURN;
 	SDL_Scancode escCode = SDL_SCANCODE_ESCAPE;
+	SDL_Scancode consoleCode = SDL_SCANCODE_GRAVE;
 };
 
 void updateScanCodes(KeyBind* keyBind);
