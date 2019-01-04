@@ -131,14 +131,14 @@ void SlaveInstance::consoleUpdate() {
 			else {
 				currentConsoleLine.append(string(1, freshInput));
 			}
-			
+
 		}
 		//Not in console so input ignores
 		else {
 			nextIn = (char)0;
 		}
 	}
-	
+
 }
 
 void SlaveInstance::killThreads() {
@@ -176,7 +176,6 @@ void SlaveInstance::computer() {
 
 		if (!stuckCounter)
 			counter++;
-
 		computeCycle();
 
 		if not(cycle % 3)

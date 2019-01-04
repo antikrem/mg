@@ -120,11 +120,9 @@ private:
 					weatherEffectManager->stopWeather();
 				}
 			}
-			else if (lineVec[1] == "STOP") {
-				if (weatherEffectManager) {
-					weatherEffectManager->stopWeather();
-				}
-			}
+		}
+		else {
+			err::logMessage("INVALID COMMAND: " + lineVec[0] + " failed to parse at cycle: " + to_string(counter));
 		}
 	}
 

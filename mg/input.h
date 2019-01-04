@@ -19,6 +19,7 @@ struct Input {
 	bool esc = false;
 	bool console = false;
 
+
 	bool operator==(Input& rhs);
 
 	bool buttonPressed();

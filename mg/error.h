@@ -27,8 +27,6 @@ namespace err {
 	void logCPS(float);
 
 	void logLevelStart(LevelSettings* level);
-
-	//For console
 }
 
 #endif

@@ -107,7 +107,7 @@ int main(int argc, char* args[]) {
 		}
 
 		if (currentState != NULL) {
-			currentState->setCurrentInput( catchInput(keyBind, &evt, currentState->getConsoleCharInput()) );
+			currentState->setCurrentInput(catchInput(keyBind, &evt, currentState->getConsoleCharInput()));
 		}
 
 		//If end level flag is true, attempt to end the level
