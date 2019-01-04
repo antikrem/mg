@@ -154,7 +154,6 @@ public:
 
 			//If shifted, check scrict bounds
 			if (playIn.shift) {
-				playSound("shoot_tick", SCplayerFire);
 				if (position.x < abs(shift+4))
 					position.x = F(abs(shift + 4));
 				if (position.x > (abs(shift + 4) + RENDERED_X))
@@ -319,6 +318,7 @@ public:
 
 		lastShooter = currentShooter;
 		currentShooter = false;
+
 		if (playIn.shoot)
 			currentShooter = true;
 		if (internalCycles % 20 == 0 && playIn.shoot) {
