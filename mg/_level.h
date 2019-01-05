@@ -122,7 +122,7 @@ private:
 			}
 		}
 		else {
-			err::logMessage("INVALID COMMAND: " + lineVec[0] + " failed to parse at cycle: " + to_string(counter));
+			err::logMessage("INVALID COMMAND: [" + command + "] failed to parse at cycle: " + to_string(counter));
 		}
 	}
 

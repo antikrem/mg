@@ -104,6 +104,29 @@ void SlaveInstance::loadCommandList() {
 	}
 }
 
+void SlaveInstance::updateConsoleView(bool push) {
+	consoleContainer->lock();
+	string newLine;
+	newLine.append(": ");
+	if (!push) {
+		newLine.append(currentConsoleLine);
+	}
+	else {
+		for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES-1; i++) {
+			consoleBuffer[i].clear();
+			consoleBuffer[i].append(consoleBuffer[i + 1]);
+		}
+		consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES - 1].clear();
+		consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES-1].append(currentConsoleLine);
+	}
+	consoleContainer->updateTextByKey("current", newLine);
+
+	for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES; i++) {
+		consoleContainer->updateTextByKey(to_string(i), consoleBuffer[i]);
+	}
+	consoleContainer->unlock();
+}
+
 void SlaveInstance::consoleUpdate() {
 	if (nextIn != (char)0) {
 		//In console so input is processed
@@ -112,28 +135,34 @@ void SlaveInstance::consoleUpdate() {
 			char freshInput = nextIn;
 			nextIn = (char)0;
 			//First check backspaces
-			if ((int)freshInput == 8 && currentConsoleLine.size() > 0) {
-				cout << "erase" << endl;
-				currentConsoleLine = currentConsoleLine.substr(0, currentConsoleLine.size() - 1);
+			if ((int)freshInput == 8) {
+				if (currentConsoleLine.size() > 0 && eraseCounter < 0) {
+					eraseCounter = 50;
+					currentConsoleLine = currentConsoleLine.substr(0, currentConsoleLine.size() - 1);
+					updateConsoleView(false);
+				}
 			}
 			//Check return, process console line
 			else if (freshInput == SDLK_RETURN) {
 				if (currentConsoleLine.size() > 0) {
 					processCommand(currentConsoleLine);
+					updateConsoleView(true);
 					currentConsoleLine.clear();
 				}
 			}
 			//Check spaces
 			else if (freshInput == SDLK_SPACE) {
 				currentConsoleLine.append(" ");
+				updateConsoleView(false);
 			}
 			//This only leaves characters to add
 			else {
 				currentConsoleLine.append(string(1, freshInput));
+				updateConsoleView(false);
 			}
-
+			
 		}
-		//Not in console so input ignores
+		//Not in console so input ignored
 		else {
 			nextIn = (char)0;
 		}
@@ -173,6 +202,7 @@ void SlaveInstance::computer() {
 			consoleCounter = 100;
 		}
 		consoleUpdate();
+		eraseCounter--;
 
 		if (!stuckCounter)
 			counter++;
@@ -205,6 +235,7 @@ void SlaveInstance::computer() {
 	}
 	memFree();
 	delete fpsContainer;
+	delete consoleContainer;
 	
 	computerActive = false;
 }
@@ -246,12 +277,14 @@ void SlaveInstance::renderer() {
 
 						average = (average / FPSVector.size());
 						
+						fpsContainer->lock();
 						fpsContainer->updateTextByKey("fps", "fps: " + to_string((int)average));
 						fpsContainer->updateTextByKey("dropped", "drop: " + to_string((float)cycleDrawCounter/(3333* cyclesPerDraw)) + "%");
 						fpsContainer->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
 						fpsContainer->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at "+ to_string(particleLoad) + "%");
 						fpsContainer->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
 						fpsContainer->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
+						fpsContainer->unlock();
 						cycleDrawCounter = 0;
 						cyclesPerDraw = 0;
 						FPSVector.clear();
@@ -259,14 +292,23 @@ void SlaveInstance::renderer() {
 				}
 			}
 			else {
+				fpsContainer->lock();
 				fpsContainer->updateTextByKey("fps", " ");
 				fpsContainer->updateTextByKey("dropped", " ");
 				fpsContainer->updateTextByKey("boxes", " ");
 				fpsContainer->updateTextByKey("particle", " ");
 				fpsContainer->updateTextByKey("cycle", " ");
 				fpsContainer->updateTextByKey("weather", " ");
+				fpsContainer->unlock();
 			}
+			fpsContainer->lock();
 			fpsContainer->renderText(0);
+			fpsContainer->unlock();
+			if (inConsole) {
+				consoleContainer->lock();
+				consoleContainer->renderText(0);
+				consoleContainer->unlock();
+			}
 		}
 		graphicsState->renderFrame();
 	}
@@ -322,7 +364,17 @@ void SlaveInstance::initialiseInstance(GraphicsState* graphicsState, TextRendere
 		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
 	fpsContainer->newTextEnt("weather", " ", { (float)5, (float)145 }, sans28, white, topLeft, false,
 		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	
+
+
+	consoleContainer = new TextContainer(textRenderer);
+	float ypos = 5;
+	for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES; i++) {
+		consoleContainer->newTextEnt(to_string(i), " ", { (float)1140, (float)ypos+35*i }, sans32, gold, topRight, false,
+			{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
+	}
+	consoleContainer->newTextEnt("current", ": ", { (float)640, (float)NUMBER_OF_CONSOLE_MESSAGES*35 + 5 }, sans32, red, topLeft, false,
+		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
+
 }
 
 void SlaveInstance::setCurrentInput(Input newInput) {

@@ -80,12 +80,16 @@ protected:
 	atomic<CUS_Point> totalWindSum;
 
 	//Console Variables
-	bool inConsole = false;
+	atomic<bool> inConsole = false;
 	int consoleCounter = 0;
+	int eraseCounter = 20;
 	char nextIn = (char)0;
-	string consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES];
+	string consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES] = { " ", " ", " ", " ", " " } ;
 	string currentConsoleLine;
 	TextContainer* consoleContainer = NULL;
+
+	/*Updates console view, feed bool to push history*/
+	void updateConsoleView(bool push);
 
 	/*A function that computes the current cycles input into console update*/
 	void consoleUpdate();
