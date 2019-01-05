@@ -61,15 +61,6 @@ private:
 public:
 	void startRain() {
 		weatherType = rain;
-		SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
-		masterRainTexture[0] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-		baseSize.x = temporarySurfaceStorage->w;
-		baseSize.y = temporarySurfaceStorage->h;
-		SDL_FreeSurface(temporarySurfaceStorage);
-
-		temporarySurfaceStorage = IMG_Load("assets\\weather\\rain1.png");
-		masterRainTexture[1] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-		SDL_FreeSurface(temporarySurfaceStorage);
 
 		WeatherEffect effect;
 		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(ABOVE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
@@ -107,6 +98,17 @@ public:
 		this->graphicsState = graphicsState;
 		this->weatherType = weatherType;
 		renderer = graphicsState->getGRenderer();
+
+		SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
+		masterRainTexture[0] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+		baseSize.x = temporarySurfaceStorage->w;
+		baseSize.y = temporarySurfaceStorage->h;
+		SDL_FreeSurface(temporarySurfaceStorage);
+
+		temporarySurfaceStorage = IMG_Load("assets\\weather\\rain1.png");
+		masterRainTexture[1] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+		SDL_FreeSurface(temporarySurfaceStorage);
+
 		if (weatherType == rain) {
 			startRain();
 		}
