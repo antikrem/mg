@@ -121,7 +121,7 @@ protected:
 
 	/*Takes a command and updates the gamestate
 	Needs to be over written*/
-	virtual void processCommand(string command);
+	virtual void processCommand(string command, bool fromMaster);
 
 	/*Checks command list,
 	computes if there are commands this cycle*/

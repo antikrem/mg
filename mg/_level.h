@@ -103,26 +103,104 @@ private:
 	SDL_Texture* overlay;
 
 private:
-	void processCommand(string command) {
+	void processCommand(string command, bool fromMaster) {
 		auto lineVec = str_kit::splitOnToken(command, ' ');
+		if (fromMaster)
+			err::logConsoleMessage("Master has called: [" + command + "]");
+
 		if (lineVec[0] == "FOV") {
-			para::setFOV(stof(lineVec[1]));
+			if (lineVec.size() != 2) {
+				if (fromMaster)
+					err::logMessage("FOV was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
+				else
+					err::logConsoleMessage("Expected FOV + 1 parameter, got: " + to_string(lineVec.size() - 1));
+			}
+			else {
+				try {
+					para::setFOV(stof(lineVec[1]));
+					err::logConsoleMessage("FOV set to: "  + to_string(para::getFOV()));
+					err::logConsoleMessage("Distance to plane set to: " + to_string(para::getDistanceFromPlane()));
+				}
+				catch (const std::exception & ex) {
+					ex.what();
+					if (fromMaster)
+						err::logMessage("FOV was called by master as " + command + " which has an invalid parameter at line " + to_string(counter));
+					else
+						err::logConsoleMessage("Requested value was not a number");
+				}
+			}	
 		}
+
 		else if (lineVec[0] == "DFP") {
-			para::setDistanceFromPlane(stof(lineVec[1]));
-		}
-		else if (lineVec[0] == "WIND") {
-			windBursts.push_back({ stof(lineVec[1]), stof(lineVec[2]) });;
-		}
-		else if (lineVec[0] == "WEATHER") {
-			if (lineVec[1] == "STOP") {
-				if (weatherEffectManager) {
-					weatherEffectManager->stopWeather();
+			if (lineVec.size() != 2) {
+				if (fromMaster)
+					err::logMessage("DFP was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
+				else
+					err::logConsoleMessage("Expected DFP + 1 parameter, got: " + to_string(lineVec.size() - 1));
+			}
+			else {
+				try {
+					para::setDistanceFromPlane(stof(lineVec[1]));
+					err::logConsoleMessage("FOV set to: " + to_string(para::getFOV()));
+					err::logConsoleMessage("Distance from plane set to: " + to_string(para::getDistanceFromPlane()));
+				}
+				catch (const std::exception & ex) {
+					ex.what();
+					if (fromMaster)
+						err::logMessage("DFP was called by master as " + command + " which has an invalid parameter at line " + to_string(counter));
+					else
+						err::logConsoleMessage("Requested value was not a number");
 				}
 			}
 		}
+
+		else if (lineVec[0] == "WIND") {
+			if (lineVec.size() != 3) {
+				if (!fromMaster)
+					err::logConsoleMessage("Expected command + 2 parameter, got: " + to_string(lineVec.size() - 1));
+				else 
+					err::logMessage("WIND was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 2 parameter");
+			}
+			else {
+				try {
+					windBursts.push_back({ stof(lineVec[1]), stof(lineVec[2]) });
+					if (!fromMaster)
+						err::logConsoleMessage("Current windburst count is: " + to_string(windBursts.size()));
+				}
+				catch (const std::exception & ex) {
+					ex.what();
+					if (fromMaster)
+						err::logMessage("WIND was called by master as " + command + " which has an invalid parameter at line " + to_string(counter));
+					else
+						err::logConsoleMessage("Requested value was not two numbers");
+				}
+			}
+		}
+
+		else if (lineVec[0] == "WEATHER") {
+			if (lineVec.size() != 2) {
+				if (!fromMaster)
+					err::logConsoleMessage("Expected command + 1 parameter, got: " + to_string(lineVec.size() - 1));
+				else
+					err::logMessage("WEATHER was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
+			}
+			else if (lineVec[1] == "STOP") {
+				if (weatherEffectManager) {
+					weatherEffectManager->stopWeather();
+					if (fromMaster)
+						err::logConsoleMessage("Master has stopped the weather");
+					else
+						err::logConsoleMessage("Weather has been stopped");
+				}
+			}
+		}
+		else if (lineVec[0] == "BACKGROUND") {
+			pass;
+		}
 		else {
-			err::logMessage("INVALID COMMAND: [" + command + "] failed to parse at cycle: " + to_string(counter));
+			if (fromMaster)
+				err::logMessage("INVALID COMMAND: [" + command + "] failed to parse in master:" + to_string(counter));
+		err::logConsoleMessage("Command: [" + command + "] was invalid");
 		}
 	}
 

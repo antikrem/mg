@@ -18,6 +18,8 @@
 using namespace std;
 
 namespace err {
+	vector<string> messageConsoleBuffer;
+
 	struct ErrorMessage {
 		int cycle = 0;
 		string message;
@@ -126,5 +128,23 @@ namespace err {
 		appendToErrorFile("Level:" + std::to_string(level->level));
 		appendToErrorFile("Player Index: " + to_string(level->currentCharacter));
 		appendToErrorFile("");
+	}
+
+	//Add a message to console buffer
+	void logConsoleMessage(string message) {
+		messageConsoleBuffer.insert(messageConsoleBuffer.begin(), message);
+	}
+
+	//Check if there is something in the console message buffer
+	bool queryConsoleMessageBuffer() {
+		return messageConsoleBuffer.size();
+	}
+
+	//return the first string in the buffer
+	string pullConsoleMessage() {
+		string message = messageConsoleBuffer.back();
+		messageConsoleBuffer.pop_back();
+		return message;
+
 	}
 }

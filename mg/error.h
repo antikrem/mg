@@ -27,6 +27,15 @@ namespace err {
 	void logCPS(float);
 
 	void logLevelStart(LevelSettings* level);
+
+	//Add a message to console buffer
+	void logConsoleMessage(string message);
+
+	//Check if there is something in the console message buffer
+	bool queryConsoleMessageBuffer();
+
+	//return the first string in the buffer
+	string pullConsoleMessage();
 }
 
 #endif

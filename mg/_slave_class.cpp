@@ -55,14 +55,14 @@ void SlaveInstance::renderCycle() {
 	err::logMessage("renderCycle() not overwritten");
 }
 
-void SlaveInstance::processCommand(string command) {
+void SlaveInstance::processCommand(string command, bool fromMaster) {
 	cout << command << endl;
 }
 
 void SlaveInstance::computeFromCommandList() {
 	if (commandList.count(counter)) {
 		for (auto command : commandList[counter]) {
-			processCommand(command);
+			processCommand(command, true);
 		}
 		commandList.erase(counter);
 	}
@@ -99,13 +99,14 @@ void SlaveInstance::loadCommandList() {
 			commandList[stoi(lineVec[0])].push_back(reconstruction);
 		}
 		else {
-			processCommand(line);
+			processCommand(line, true);
 		}
 	}
 }
 
 void SlaveInstance::updateConsoleView(bool push) {
 	consoleContainer->lock();
+
 	string newLine;
 	newLine.append(": ");
 	if (!push) {
@@ -119,11 +120,12 @@ void SlaveInstance::updateConsoleView(bool push) {
 		consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES - 1].clear();
 		consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES-1].append(currentConsoleLine);
 	}
-	consoleContainer->updateTextByKey("current", newLine);
 
+	consoleContainer->updateTextByKey("current", newLine);
 	for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES; i++) {
 		consoleContainer->updateTextByKey(to_string(i), consoleBuffer[i]);
 	}
+
 	consoleContainer->unlock();
 }
 
@@ -145,7 +147,7 @@ void SlaveInstance::consoleUpdate() {
 			//Check return, process console line
 			else if (freshInput == SDLK_RETURN) {
 				if (currentConsoleLine.size() > 0) {
-					processCommand(currentConsoleLine);
+					processCommand(currentConsoleLine, false);
 					updateConsoleView(true);
 					currentConsoleLine.clear();
 				}
@@ -168,6 +170,17 @@ void SlaveInstance::consoleUpdate() {
 		}
 	}
 
+	if (inConsole) {
+		if (err::queryConsoleMessageBuffer()) {
+			for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES - 1; i++) {
+				consoleBuffer[i].clear();
+				consoleBuffer[i].append(consoleBuffer[i + 1]);
+			}
+			consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES - 1].clear();
+			consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES - 1].append(err::pullConsoleMessage());
+			updateConsoleView(false);
+		}
+	}
 }
 
 void SlaveInstance::killThreads() {
