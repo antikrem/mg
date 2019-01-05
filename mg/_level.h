@@ -193,6 +193,15 @@ private:
 						err::logConsoleMessage("Weather has been stopped");
 				}
 			}
+			else if (lineVec[1] == "RAIN") {
+				if (weatherEffectManager) {
+					weatherEffectManager->startRain();
+					if (fromMaster)
+						err::logConsoleMessage("Master has started rain");
+					else
+						err::logConsoleMessage("Rain sequence has started");
+				}
+			}
 			else {
 				if (fromMaster)
 					err::logConsoleMessage("Invalid parameter for STOP at cycle: " + to_string(counter));

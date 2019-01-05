@@ -1,15 +1,12 @@
-LOG FILE FOR 2tick+1-INDEV INSTANCE RAN ON: Sun Jan  6 07:09:13 2019
+LOG FILE FOR 2tick+1-INDEV INSTANCE RAN ON: Sun Jan  6 07:26:07 2019
 
 Resolution: 1366 by 768
 Fullscreen: 0
 vsync: 0
 Scan Codes loaded, parsed and updated
-150: but 1 pressed
+1334: but 1 pressed
 Warning: profile at assets\UI\in_game\character_profiles\sorceress.bmp is of deviant aspect ratio. Recommended aspect ratio is a scale of 170:208
 LEVEL STARTED WITH THE FOLLOWING SETTINGS:
 Level:1
 Player Index: 0
 
-SAFELY EXITED AT: Sun Jan  6 07:09:29 2019
-
-Cycles waited:3
