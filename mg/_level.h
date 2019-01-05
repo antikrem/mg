@@ -193,6 +193,35 @@ private:
 						err::logConsoleMessage("Weather has been stopped");
 				}
 			}
+			else {
+				if (fromMaster)
+					err::logConsoleMessage("Invalid parameter for STOP at cycle: " + to_string(counter));
+				else
+					err::logConsoleMessage("Invalid parameter for STOP");
+			}
+		}
+		else if (lineVec[0] == "LIGHTING") {
+			if (lineVec.size() != 2) {
+				if (!fromMaster)
+					err::logConsoleMessage("Expected command + 1 parameter, got: " + to_string(lineVec.size() - 1));
+				else
+					err::logMessage("LIGHTING was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
+			}
+			else if (lineVec[1] == "LIGHTNING") {
+				if (lightMaster) {
+					lightMaster->lightningStrike();
+					if (fromMaster)
+						err::logConsoleMessage("Master dropped Lightning");
+					else
+						err::logConsoleMessage("Lightning spawned correctly");
+				}
+			}
+			else {
+				if (fromMaster)
+					err::logConsoleMessage("Invalid parameter for LIGHTING at cycle: " + to_string(counter));
+				else
+					err::logConsoleMessage("Invalid parameter for LIGHTING");
+			}
 		}
 		else if (lineVec[0] == "BACKGROUND") {
 			pass;

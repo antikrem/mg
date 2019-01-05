@@ -39,6 +39,7 @@ class LightMaster : public ThreadSafe {
 	GraphicsState* gState = NULL;
 	SDL_Renderer* renderer = NULL;
 	SDL_Texture* blackTexture = NULL;
+	SDL_Texture* whiteTexture = NULL;
 
 	//The speed at which the light value will recover towards normal
 	float lightChangeRate = 0.1f;
@@ -51,56 +52,41 @@ class LightMaster : public ThreadSafe {
 	//In addition, a layer of translucent colour is drawn before the layer, plus an extra right at the end
 	float lightLevelBrightness[lightLevels+1] = { FULLNORMAL, FULLNORMAL, FULLNORMAL, FULLNORMAL };
 
-	void lightBrightnessSet(float changeRate, float far, float medium, float close) {
-		if (lightBrightness[0] < far) {
-			lightBrightness[0] += changeRate;
-		}
-		else if (lightBrightness[0] > far) {
-			lightBrightness[0] -= changeRate;
-		}
+	//far to close, if rate of change is 0, occurs instantly
+	void lightBrightnessSet(float changeRate, vector<float> target) {
+		for (int i = 0; i < 3; i++) {
 
-		if (lightBrightness[1] < medium) {
-			lightBrightness[1] += changeRate;
-		}
-		else if (lightBrightness[1] > medium) {
-			lightBrightness[1] -= changeRate;
-		}
-
-		if (lightBrightness[2] < close) {
-			lightBrightness[2] += changeRate;
-		}
-		else if (lightBrightness[2] > close) {
-			lightBrightness[2] -= changeRate;
+			if (!changeRate) {
+				lightBrightness[i] = changeRate;
+			}
+			else {
+				if (lightBrightness[i] < target[i]) {
+					lightBrightness[i] += changeRate;
+				}
+				else if (lightBrightness[i] > target[i]) {
+					lightBrightness[i] -= changeRate;
+				}
+			}
+			
 		}
 	}
 
-	void lightLevelBrightnessSet(float changeRate, float far, float medium, float close, float closest) {
-		if (lightLevelBrightness[0] < far) {
-			lightLevelBrightness[0] += changeRate;
-		}
-		else if (lightLevelBrightness[0] > far) {
-			lightLevelBrightness[0] -= changeRate;
-		}
+	//far to close
+	void lightLevelBrightnessSet(float changeRate, vector<float> target) {
+		for (int i = 0; i < 4; i++) {
 
-		if (lightLevelBrightness[1] < medium) {
-			lightLevelBrightness[1] += changeRate;
-		}
-		else if (lightLevelBrightness[1] > medium) {
-			lightLevelBrightness[1] -= changeRate;
-		}
+			if (!changeRate) {
+				lightLevelBrightness[i] = target[i];
+			}
+			else {
+				if (lightLevelBrightness[i] < target[i]) {
+					lightLevelBrightness[i] += changeRate;
+				}
+				else if (lightLevelBrightness[i] > target[i]) {
+					lightLevelBrightness[i] -= changeRate;
+				}
+			}
 
-		if (lightLevelBrightness[2] < close) {
-			lightLevelBrightness[2] += changeRate;
-		}
-		else if (lightLevelBrightness[2] > close) {
-			lightLevelBrightness[2] -= changeRate;
-		}
-
-		if (lightLevelBrightness[3] < closest) {
-			lightLevelBrightness[3] += changeRate;
-		}
-		else if (lightLevelBrightness[3] > closest) {
-			lightLevelBrightness[3] -= changeRate;
 		}
 	}
 
@@ -114,14 +100,24 @@ public:
 			err::logMessage("Black image for lighting failed to load");
 		blackTexture = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
 		SDL_FreeSurface(temporarySurfaceStorage);
+		temporarySurfaceStorage = IMG_Load("assets\\lighting\\white.png");
+		if (temporarySurfaceStorage == NULL)
+			err::logMessage("White image for lighting failed to load");
+		whiteTexture = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+		SDL_FreeSurface(temporarySurfaceStorage);
 	}
 
-	LightMaster() {
+	~LightMaster() {
 		SDL_DestroyTexture(blackTexture);
+		SDL_DestroyTexture(whiteTexture);
 	}
 
 	void setLightMode(LightModes lightMode) {
 		this->lightMode = lightMode;
+	}
+
+	void lightningStrike() {
+		lightLevelBrightnessSet(0, { -200.0f, -200.0f, -20.f, FULLNORMAL });
 	}
 
 	void update() {
@@ -130,13 +126,13 @@ public:
 		}
 		else {
 			if (lightMode == LMNormal) {
-				lightBrightnessSet(0.1f, FULLNORMAL, FULLNORMAL, FULLNORMAL);
-				lightLevelBrightnessSet(0.1f, 10.0f, 5.0f, 2.0f, FULLNORMAL);
+				lightBrightnessSet(0.15f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
+				lightLevelBrightnessSet(0.17f, { 10.0f, 5.0f, 2.0f, FULLNORMAL });
 			}
 
 			if (lightMode == LMRain) {
-				lightBrightnessSet(0.1f, FULLNORMAL, FULLNORMAL, FULLNORMAL);
-				lightLevelBrightnessSet(0.3f, 50.0f, 50.0f, 50.0f, 50.0f);
+				lightBrightnessSet(0.15f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
+				lightLevelBrightnessSet(0.17f, { 90.0f, 80.0f, 50.0f, 70.0f });
 			}
 
 		}
@@ -158,6 +154,16 @@ public:
 					drawPos.x = i;
 					drawPos.y = j;
 					SDL_RenderCopyEx(gState->getGRenderer(), blackTexture, NULL, &drawPos, 0, NULL, SDL_FLIP_NONE);
+				}
+			}
+		}
+		else if (lightLevelBrightness[level] < -0.4f) {
+			SDL_SetTextureAlphaMod(whiteTexture, (Uint8)(-1*lightLevelBrightness[level]));
+			for (int i = 0; i < (WORK_SPACE_X + 400); i += 400) {
+				for (int j = 0; j < (WORK_SPACE_Y + 400); j += 400) {
+					drawPos.x = i;
+					drawPos.y = j;
+					SDL_RenderCopyEx(gState->getGRenderer(), whiteTexture, NULL, &drawPos, 0, NULL, SDL_FLIP_NONE);
 				}
 			}
 		}

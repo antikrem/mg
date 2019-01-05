@@ -190,7 +190,6 @@
     <Text Include="log.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="config\engine_settings.ini" />
     <None Include="config\gfx_settings.ini" />
     <None Include="config\keybinds.ini" />
   </ItemGroup>

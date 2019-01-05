@@ -183,9 +183,6 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <None Include="config\engine_settings.ini">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="config\gfx_settings.ini">
       <Filter>Resource Files</Filter>
     </None>
