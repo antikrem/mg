@@ -143,7 +143,12 @@ void TextEntity::update() {
 }
 
 void TextEntity::changeText(string newText) {
-	this->text = newText;
+	if (newText == "") {
+		this->text = " ";
+	}
+	else {
+		this->text = newText;
+	}
 
 	SDL_DestroyTexture(textTex);
 
