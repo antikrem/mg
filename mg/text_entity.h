@@ -17,7 +17,8 @@
 enum Alignment {
 	topLeft,
 	midLeft,
-	midMid
+	midMid,
+	topRight
 };
 
 enum Font {
@@ -25,6 +26,7 @@ enum Font {
 	sans20,
 	sans22,
 	sans28,
+	sans32,
 	sans36,
 	sans48
 };

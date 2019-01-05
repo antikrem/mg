@@ -9,6 +9,7 @@ TextRenderer::TextRenderer(GraphicsState* gState) {
 	fonts[sans20] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 20);
 	fonts[sans22] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 22);
 	fonts[sans28] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 28);
+	fonts[sans32] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 32);
 	fonts[sans36] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 36);
 	fonts[sans48] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 48);
 
@@ -21,6 +22,8 @@ TextRenderer::TextRenderer(GraphicsState* gState) {
 	TTF_SetFontOutline(bolds[sans22], 2);
 	bolds[sans28] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 28);
 	TTF_SetFontOutline(bolds[sans28], 2);
+	bolds[sans32] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 32);
+	TTF_SetFontOutline(bolds[sans32], 2);
 	bolds[sans36] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 36);
 	TTF_SetFontOutline(bolds[sans36], 2);
 	bolds[sans48] = TTF_OpenFont("assets\\fonts\\Sans.ttf", 48);
@@ -38,6 +41,7 @@ TextRenderer::~TextRenderer() {
 	TTF_CloseFont(fonts[sans20]);
 	TTF_CloseFont(fonts[sans22]);
 	TTF_CloseFont(fonts[sans28]);
+	TTF_CloseFont(fonts[sans32]);
 	TTF_CloseFont(fonts[sans36]);
 	TTF_CloseFont(fonts[sans48]);
 
@@ -45,6 +49,7 @@ TextRenderer::~TextRenderer() {
 	TTF_CloseFont(bolds[sans20]);
 	TTF_CloseFont(bolds[sans22]);
 	TTF_CloseFont(bolds[sans28]);
+	TTF_CloseFont(fonts[sans32]);
 	TTF_CloseFont(bolds[sans36]);
 	TTF_CloseFont(bolds[sans48]);
 }
@@ -63,11 +68,19 @@ void TextEntity::fixAllignment() {
 		textRect.x = (int)position.x;
 		textRect.y = (int)position.y - (int)(textRect.h / 2);
 		break;
+	case(topRight):
+		textRect.x = (int)position.x - (int)textRect.w;
+		textRect.y = (int)position.y;
 	}
 }
 
 TextEntity::TextEntity(TextRenderer* TEXT_RENDERER, string text, CUS_Point position, Font font, Color color, Alignment alignment, int cycles, bool outline) {
-	this->text = text;
+	if (text == "") {
+		this->text = " ";
+	}
+	else {
+		this->text = text;
+	}
 	this->font = font;
 	this->alignment = alignment;
 	this->color = color;
@@ -83,14 +96,14 @@ TextEntity::TextEntity(TextRenderer* TEXT_RENDERER, string text, CUS_Point posit
 	SDL_Surface* textSurf;
 
 	if (this->outline) {
-		SDL_Surface* foreground = TTF_RenderText_Solid((*TEXT_RENDERER).fonts[font], text.c_str(), (*TEXT_RENDERER).colors[color]);;
-		textSurf = TTF_RenderText_Solid((*TEXT_RENDERER).bolds[font], text.c_str(), (*TEXT_RENDERER).colors[black]);
+		SDL_Surface* foreground = TTF_RenderText_Solid((*TEXT_RENDERER).fonts[font], this->text.c_str(), (*TEXT_RENDERER).colors[color]);;
+		textSurf = TTF_RenderText_Solid((*TEXT_RENDERER).bolds[font], this->text.c_str(), (*TEXT_RENDERER).colors[black]);
 		SDL_Rect blitzRect = { 1,1,foreground->w,foreground->h };
 		SDL_BlitSurface(foreground, NULL, textSurf, &blitzRect);
 		SDL_FreeSurface(foreground);
 	}
 	else {
-		textSurf = TTF_RenderText_Solid((*TEXT_RENDERER).fonts[font], text.c_str(), (*TEXT_RENDERER).colors[color]);
+		textSurf = TTF_RenderText_Solid((*TEXT_RENDERER).fonts[font], this->text.c_str(), (*TEXT_RENDERER).colors[color]);
 	}
 
 	textTex = SDL_CreateTextureFromSurface(TEXT_RENDERER->gRenderer, textSurf);
