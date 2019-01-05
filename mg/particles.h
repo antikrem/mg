@@ -104,6 +104,7 @@ public:
 		auto tex = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), temporarySurfaceStorage);
 		if (!tex)
 			err::logMessage("ERROR: Couldn't convert from " + loc);
+		SDL_FreeSurface(temporarySurfaceStorage);
 		return tex;
 	}
 
@@ -131,6 +132,7 @@ public:
 		auto tex = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), temporarySurfaceStorage);
 		if (!tex)
 			err::logMessage("ERROR: Couldn't convert from " + loc);
+		SDL_FreeSurface(temporarySurfaceStorage);
 		return tex;
 	}
 
