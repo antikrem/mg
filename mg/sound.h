@@ -10,9 +10,10 @@
 enum SoundChannel {
 	SCbase,
 	SCplayerFire,
+	SCLightning
 };
 
-const int SCLength = 2;
+const int SCLength = 3;
 
 void sound_ini();
 

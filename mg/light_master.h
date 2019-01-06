@@ -116,8 +116,10 @@ public:
 	}
 
 	void lightningStrike() {
-		lightLevelBrightnessSet(0, { -200.0f, -200.0f, -20.f, FULLNORMAL });
-		lightBrightnessSet(0, { 200.0f, 200.0f, 200.f });
+		lightChangePause = 600;
+		lightLevelBrightnessSet(0, { -250.0f, -250.0f, -20.f, FULLNORMAL });
+		lightBrightnessSet(0, { 250.0f, 250.0f, 250.f });
+		playSound("strike0", SCLightning);
 	}
 
 	void update() {
@@ -126,13 +128,13 @@ public:
 		}
 		else {
 			if (lightMode == LMNormal) {
-				lightBrightnessSet(0.15f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
-				lightLevelBrightnessSet(0.17f, { 10.0f, 5.0f, 2.0f, FULLNORMAL });
+				lightBrightnessSet(0.7f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
+				lightLevelBrightnessSet(0.7f, { 10.0f, 5.0f, 2.0f, FULLNORMAL });
 			}
 
 			if (lightMode == LMRain) {
-				lightBrightnessSet(0.15f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
-				lightLevelBrightnessSet(0.17f, { 90.0f, 80.0f, 50.0f, 70.0f });
+				lightBrightnessSet(0.7f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
+				lightLevelBrightnessSet(0.7f, { 90.0f, 80.0f, 50.0f, 70.0f });
 			}
 
 		}
