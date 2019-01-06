@@ -164,12 +164,10 @@ protected:
 			if (drawTarget.alpha > 250) {
 				SDL_SetTextureAlphaMod(drawTarget.shadowFrame, darkness);
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.shadowFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
-				SDL_SetTextureAlphaMod(drawTarget.shadowFrame, 255);
 			}
 			else if (drawTarget.alpha > 0) {
 				SDL_SetTextureAlphaMod( drawTarget.shadowFrame, (int)((((float)drawTarget.alpha) / 255) * (float)darkness) );
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.shadowFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
-				SDL_SetTextureAlphaMod(drawTarget.shadowFrame, 255);
 			}
 		}
 		//Or add light
@@ -177,12 +175,10 @@ protected:
 			if (drawTarget.alpha > 250) {
 				SDL_SetTextureAlphaMod(drawTarget.lightFrame, -1*darkness);
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.lightFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
-				SDL_SetTextureAlphaMod(drawTarget.lightFrame, 255);
 			}
 			else if (drawTarget.alpha > 0) {
 				SDL_SetTextureAlphaMod(drawTarget.lightFrame, -1 * (int)((((float)drawTarget.alpha) / 255) * (float)darkness));
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.lightFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
-				SDL_SetTextureAlphaMod(drawTarget.lightFrame, 255);
 			}
 		}
 
