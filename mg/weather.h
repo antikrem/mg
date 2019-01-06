@@ -46,6 +46,8 @@ private:
 	WeatherType weatherType = noweather;
 
 	SDL_Texture* masterRainTexture[2] = { NULL,NULL };
+	SDL_Texture* masterRainTextureBlack[2] = { NULL,NULL };
+	SDL_Texture* masterRainTextureWhite[2] = { NULL,NULL };
 	SDL_Point baseSize;
 	SDL_Renderer* renderer = NULL;
 
@@ -99,15 +101,55 @@ public:
 		this->weatherType = weatherType;
 		renderer = graphicsState->getGRenderer();
 
-		SDL_Surface *temporarySurfaceStorage = IMG_Load("assets\\weather\\rain.png");
-		masterRainTexture[0] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-		baseSize.x = temporarySurfaceStorage->w;
-		baseSize.y = temporarySurfaceStorage->h;
-		SDL_FreeSurface(temporarySurfaceStorage);
+		SDL_Surface *temporarySurfaceStorage;
+		SDL_PixelFormat *fmt;
 
-		temporarySurfaceStorage = IMG_Load("assets\\weather\\rain1.png");
-		masterRainTexture[1] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
-		SDL_FreeSurface(temporarySurfaceStorage);
+		for (int i = 0; i < 2; i++) {
+			string pos = "assets\\weather\\rain" + to_string(i) + ".png";
+			temporarySurfaceStorage = IMG_Load(pos.c_str());
+			masterRainTexture[i] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+			baseSize.x = temporarySurfaceStorage->w;
+			baseSize.y = temporarySurfaceStorage->h;
+
+			fmt = temporarySurfaceStorage->format;
+			if (fmt->BitsPerPixel != 32)
+				err::logMessage("Format is borked");
+
+			Uint32 *pixel = (Uint32 *)temporarySurfaceStorage->pixels;
+			Uint8 r, g, b, a;
+
+			//Generates dark map
+			SDL_LockSurface(temporarySurfaceStorage);
+			for (int y = 0; y < temporarySurfaceStorage->h; y++) {
+				for (int x = 0; x < temporarySurfaceStorage->w; x++) {
+					pixel = (Uint32 *)temporarySurfaceStorage->pixels;
+					pixel += ((y*temporarySurfaceStorage->w) + x);
+					SDL_GetRGBA(*pixel, fmt, &r, &g, &b, &a);
+					*pixel = SDL_MapRGBA(fmt, 0, 0, 0, a);
+
+				}
+			}
+			SDL_UnlockSurface(temporarySurfaceStorage);
+
+			masterRainTextureBlack[i] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+
+			//Generates white map
+			SDL_LockSurface(temporarySurfaceStorage);
+			for (int y = 0; y < temporarySurfaceStorage->h; y++) {
+				for (int x = 0; x < temporarySurfaceStorage->w; x++) {
+					pixel = (Uint32 *)temporarySurfaceStorage->pixels;
+					pixel += ((y*temporarySurfaceStorage->w) + x);
+					SDL_GetRGBA(*pixel, fmt, &r, &g, &b, &a);
+					*pixel = SDL_MapRGBA(fmt, 255, 255, 255, a);
+
+				}
+			}
+			SDL_UnlockSurface(temporarySurfaceStorage);
+
+			masterRainTextureWhite[i] = SDL_CreateTextureFromSurface(renderer, temporarySurfaceStorage);
+
+			SDL_FreeSurface(temporarySurfaceStorage);
+		}		
 
 		if (weatherType == rain) {
 			startRain();
@@ -384,10 +426,19 @@ public:
 
 	}
 
-	void drawAboveWeather(int shift) {
+	void drawAboveWeather(LightMaster* lm, int shift, int darkness) {
 		SDL_Rect drawPos;
 		drawPos.w = 400;
 		drawPos.h = 400;
+
+		if (darkness > 0) {
+			for (int i = 0; i < 2; i++)
+				SDL_SetTextureAlphaMod(masterRainTextureBlack[i], darkness);
+		}
+		else if (darkness < 0) {
+			for (int i = 0; i < 2; i++)
+				SDL_SetTextureAlphaMod(masterRainTextureWhite[i], -1 *darkness);
+		}
 
 		if (graphicsState->getWeatherVolume() > low) {
 			for (auto effect : weatherEffectsAbove) {
@@ -397,15 +448,32 @@ public:
 				drawPos.y = (int)effect.position.y;
 
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTexture[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				
+				if (darkness > 0) {
+					SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTextureBlack[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				}
+				else if (darkness < 0) {
+					SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTextureWhite[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				}
+
 			}
 		}
 
 	}
 
-	void drawBackWeather(int shift) {
+	void drawBackWeather(LightMaster* lm, int shift, int darkness) {
 		SDL_Rect drawPos;
 		drawPos.w = 400;
 		drawPos.h = 400;
+
+		if (darkness > 0) {
+			for (int i = 0; i < 2; i++)
+				SDL_SetTextureAlphaMod(masterRainTextureBlack[i], darkness);
+		}
+		else if (darkness < 0) {
+			for (int i = 0; i < 2; i++)
+				SDL_SetTextureAlphaMod(masterRainTextureWhite[i], -1 * darkness);
+		}
 
 		if (graphicsState->getWeatherVolume() > high) {
 			for (auto effect : weatherEffectsBelow) {
@@ -415,15 +483,32 @@ public:
 				drawPos.y = (int)effect.position.y;
 
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTexture[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				
+				if (darkness > 0) {
+					SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTextureBlack[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				}
+				else if (darkness < 0) {
+					SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTextureWhite[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				}
+
 			}
 		}
 
 	}
 
-	void drawMiddleWeather(int shift) {
+	void drawMiddleWeather(LightMaster* lm, int shift, int darkness) {
 		SDL_Rect drawPos;
 		drawPos.w = 400;
 		drawPos.h = 400;
+
+		if (darkness > 0) {
+			for (int i = 0; i < 2; i++)
+				SDL_SetTextureAlphaMod(masterRainTextureBlack[i], darkness);
+		}
+		else if (darkness < 0) {
+			for (int i = 0; i < 2; i++)
+				SDL_SetTextureAlphaMod(masterRainTextureWhite[i], -1 * darkness);
+		}
 
 		if (graphicsState->getWeatherVolume() > medium) {
 			for (auto effect : weatherEffectsMiddle) {
@@ -433,7 +518,15 @@ public:
 				drawPos.y = (int)effect.position.y;
 
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTexture[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+			
+				if (darkness > 0) {
+					SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTextureBlack[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				}
+				else if (darkness < 0) {
+					SDL_RenderCopyEx(graphicsState->getGRenderer(), masterRainTextureWhite[effect.frameNumber], NULL, &drawPos, effect.angle, NULL, SDL_FLIP_NONE);
+				}
 			}
+
 		}
 
 	}

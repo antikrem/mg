@@ -553,7 +553,7 @@ private:
 
 		//Draw weather back
 		weatherMasterLock.lock();
-		weatherEffectManager->drawBackWeather(shift);
+		weatherEffectManager->drawBackWeather(lightMaster, shift, lightMaster->getObjectRenderBrightness(0));
 		weatherMasterLock.unlock();
 
 		//Draw background objects under player
@@ -568,11 +568,6 @@ private:
 		}
 		backgroundObjectManager->unlock();
 
-		//Draw weather middle
-		weatherMasterLock.lock();
-		weatherEffectManager->drawMiddleWeather(shift);
-		weatherMasterLock.unlock();
-
 		//Draw anon ents under player bullets
 		anonEnts.lock();
 		for (auto i : anonEnts.getEntList()) {
@@ -583,6 +578,11 @@ private:
 		lightMaster->lock();
 		lightMaster->drawLightLevel(1);
 		lightMaster->unlock();
+
+		//Draw weather middle
+		weatherMasterLock.lock();
+		weatherEffectManager->drawMiddleWeather(lightMaster, shift, lightMaster->getObjectRenderBrightness(1));
+		weatherMasterLock.unlock();
 
 		//Draw player bullets
 		playerBullets.lock();
@@ -624,7 +624,7 @@ private:
 
 		//Draw weather above
 		weatherMasterLock.lock();
-		weatherEffectManager->drawAboveWeather(shift);
+		weatherEffectManager->drawAboveWeather(lightMaster, shift, lightMaster->getObjectRenderBrightness(2));
 		weatherMasterLock.unlock();
 
 		lightMaster->lock();

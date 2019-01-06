@@ -1,5 +1,5 @@
 /*Light master, Handles big boy tasks like assignning light values for rendered elements and lightning
-Theres 4 major light levels:
+Theres 3 major light levels:
 The first extends right under player plane, covering background object and middle weather and anon ents under player bullets
 This layer is special, because it further scales based on depth, with the level 0 to level 1 scaled
 The second extends from player bullets to player, covering all important gameplay elements
@@ -116,7 +116,7 @@ public:
 	}
 
 	void lightningStrike() {
-		lightChangePause = 600;
+		lightChangePause = 650;
 		lightLevelBrightnessSet(0, { -250.0f, -250.0f, -20.f, FULLNORMAL });
 		lightBrightnessSet(0, { 250.0f, 250.0f, 250.f });
 		playSound("strike0", SCLightning);
@@ -128,13 +128,13 @@ public:
 		}
 		else {
 			if (lightMode == LMNormal) {
-				lightBrightnessSet(0.7f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
-				lightLevelBrightnessSet(0.7f, { 10.0f, 5.0f, 2.0f, FULLNORMAL });
+				lightBrightnessSet(0.5f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
+				lightLevelBrightnessSet(0.5f, { 10.0f, 5.0f, 2.0f, FULLNORMAL });
 			}
 
 			if (lightMode == LMRain) {
-				lightBrightnessSet(0.7f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
-				lightLevelBrightnessSet(0.7f, { 90.0f, 80.0f, 50.0f, 70.0f });
+				lightBrightnessSet(0.5f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
+				lightLevelBrightnessSet(0.5f, { 90.0f, 80.0f, 50.0f, 70.0f });
 			}
 
 		}
