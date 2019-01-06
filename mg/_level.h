@@ -576,7 +576,7 @@ private:
 		//Draw anon ents under player bullets
 		anonEnts.lock();
 		for (auto i : anonEnts.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, FULLNORMAL, FULLSIZE);
+			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(0), FULLSIZE);
 		}
 		anonEnts.unlock();
 
@@ -587,27 +587,27 @@ private:
 		//Draw player bullets
 		playerBullets.lock();
 		for (auto i : playerBullets.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, FULLNORMAL, FULLSIZE);
+			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		playerBullets.unlock();
 
 		//Draw powerups
 		powerUps.lock();
 		for (auto i : powerUps.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, FULLNORMAL, FULLSIZE);
+			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		powerUps.unlock();
 
 		//Draw Enemies
 		enemyEntities.lock();
 		for (auto i : enemyEntities.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, FULLNORMAL, FULLSIZE);
+			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		enemyEntities.unlock();
 
 		//Draw player
 		player->lock();
-		drawBoxEntity(player->renderCopy(), shift, FULLNORMAL, FULLSIZE);
+		drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		player->unlock();
 
 		lightMaster->lock();

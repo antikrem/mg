@@ -57,7 +57,7 @@ class LightMaster : public ThreadSafe {
 		for (int i = 0; i < 3; i++) {
 
 			if (!changeRate) {
-				lightBrightness[i] = changeRate;
+				lightBrightness[i] = target[i];
 			}
 			else {
 				if (lightBrightness[i] < target[i]) {
@@ -66,8 +66,7 @@ class LightMaster : public ThreadSafe {
 				else if (lightBrightness[i] > target[i]) {
 					lightBrightness[i] -= changeRate;
 				}
-			}
-			
+			}	
 		}
 	}
 
@@ -118,6 +117,7 @@ public:
 
 	void lightningStrike() {
 		lightLevelBrightnessSet(0, { -200.0f, -200.0f, -20.f, FULLNORMAL });
+		lightBrightnessSet(0, { 200.0f, 200.0f, 200.f });
 	}
 
 	void update() {
@@ -138,6 +138,7 @@ public:
 		}
 	}
 
+	//furthest to closest
 	void drawLightLevel(int level) {
 		if (level < 0 || level > 3) {
 			err::logMessage("hahaha + " + to_string(level));
@@ -168,6 +169,14 @@ public:
 			}
 		}
 		
+	}
+
+	//furthest to closest
+	int getObjectRenderBrightness(int level) {
+		if (level < 0 || level > 2) {
+			err::logMessage("hahaha + " + to_string(level));
+		}
+		return (int)lightBrightness[level];
 	}
 };
 
