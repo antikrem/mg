@@ -571,7 +571,9 @@ private:
 		//Draw anon ents under player bullets
 		anonEnts.lock();
 		for (auto i : anonEnts.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(0), FULLSIZE);
+			if (!i->getAbovePlayerBullets()) {
+				drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(0), FULLSIZE);
+			}
 		}
 		anonEnts.unlock();
 
@@ -597,6 +599,15 @@ private:
 			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		powerUps.unlock();
+
+		//Draw anon ents above player bullets
+		anonEnts.lock();
+		for (auto i : anonEnts.getEntList()) {
+			if (i->getAbovePlayerBullets()) {
+				drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			}
+		}
+		anonEnts.unlock();
 
 		//Draw Enemies
 		enemyEntities.lock();
