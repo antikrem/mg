@@ -64,6 +64,8 @@ public:
 	void startRain() {
 		weatherType = rain;
 
+		playLoopedSound("rain", SCWeatherBackground);
+
 		WeatherEffect effect;
 		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(ABOVE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
 			for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(ABOVE_SCALE * baseSize.y / 2 + random::randomFloat(-20, 20))) {
@@ -534,6 +536,7 @@ public:
 	//Stops the weather, but doesnt clear current weather effects
 	void stopWeather() {
 		weatherType = noweather;
+		stopChannel(SCWeatherBackground, 300);
 	}
 
 	int getEffectsCountByIndex(int index) {

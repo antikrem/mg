@@ -10,10 +10,11 @@
 enum SoundChannel {
 	SCbase,
 	SCplayerFire,
-	SCLightning
+	SCLightning,
+	SCWeatherBackground
 };
 
-const int SCLength = 3;
+const int SCLength = 4;
 
 void sound_ini();
 

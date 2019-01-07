@@ -48,7 +48,8 @@ void sound_ini() {
 	for (int i = 0; i < SCLength; i++)
 		volumeChannel[i] = 1.0f;
 	//Default volume values
-	volumeChannel[SCplayerFire] = 0.3f;
+	volumeChannel[SCplayerFire] = 0.2f;
+	volumeChannel[SCWeatherBackground] = 0.25f;
 	setAllVolumeChannels();
 }
 

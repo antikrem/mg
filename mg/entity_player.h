@@ -360,7 +360,7 @@ public:
 		if (lastShooter == false && currentShooter == true)
 			playLoopedSound("shoot_tick", SCplayerFire);
 		else if (lastShooter == true && currentShooter == false)
-			stopChannel(SCplayerFire, 150);
+			stopChannel(SCplayerFire, 110);
 	}
 
 };
