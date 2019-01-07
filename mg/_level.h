@@ -232,12 +232,47 @@ private:
 					err::logConsoleMessage("Invalid parameter for LIGHTING");
 			}
 		}
+		else if (lineVec[0] == "MUSIC") {
+			if (lineVec.size() != 3) {
+				if (!fromMaster)
+					err::logConsoleMessage("Expected command + 2 parameters, got: " + to_string(lineVec.size() - 1));
+				else {
+					err::logMessage("MUSIC was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
+					err::logConsoleMessage("MUSIC was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
+				}
+					
+			}
+			else if (lineVec[1] == "PLAY") {
+
+				if (checkMusic(lineVec[2])) {
+					playMusic(lineVec[2]);
+					err::logConsoleMessage("Playing Track: " + lineVec[1]);
+				}
+				else {
+					if (fromMaster) {
+						err::logConsoleMessage("Master tried to play music that isn't in the library: " + lineVec[2]);
+						err::logMessage("Master tried to play music that isn't in the library: " + lineVec[2]);
+					}
+					else
+						err::logConsoleMessage("Invalid parameter for MUSIC PLAY");
+				}
+			}
+			else {
+				if (!fromMaster)
+					err::logConsoleMessage("MUSIC was not given a proper command: " + lineVec[1]);
+				else {
+					err::logMessage("MUSIC was not given a proper command: " + lineVec[1] + " on cyle " + to_string(counter));
+					err::logConsoleMessage("MUSIC was not given a proper command: " + lineVec[1]);
+				}
+
+			}
+		}
 		else if (lineVec[0] == "BACKGROUND") {
 			pass;
 		}
 		else {
 			if (fromMaster)
-				err::logMessage("INVALID COMMAND: [" + command + "] failed to parse in master:" + to_string(counter));
+				err::logMessage("INVALID COMMAND: [" + command + "] failed to parse in master: " + to_string(counter));
 		err::logConsoleMessage("Command: [" + command + "] was invalid");
 		}
 	}

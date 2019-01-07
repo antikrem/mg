@@ -45,6 +45,9 @@ void setMusicVolume(int volume);
 //Stop music, optional fade
 void stopMusic(int fade = 0);
 
+//Checks if music track is in library
+bool checkMusic(string name);
+
 void sound_end();
 
 

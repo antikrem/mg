@@ -40,7 +40,7 @@ void setAllVolumeChannels() {
 
 void sound_ini() {
 	//Initialize SDL_mixer
-	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, SCLength, 2048) < 0) {
 		err::logMessage("Sounds systems failed to initialise");
 	}
 
@@ -48,8 +48,8 @@ void sound_ini() {
 	for (int i = 0; i < SCLength; i++)
 		volumeChannel[i] = 1.0f;
 	//Default volume values
-	volumeChannel[SCplayerFire] = 0.2f;
-	volumeChannel[SCWeatherBackground] = 0.25f;
+	volumeChannel[SCplayerFire] = 0.15f;
+	volumeChannel[SCWeatherBackground] = 0.6f;
 	setAllVolumeChannels();
 }
 
@@ -192,6 +192,10 @@ void stopMusic(int fade) {
 	int fadeTime = (int)(F(fade * 10) / 3);
 	cout << fadeTime << endl;
 	Mix_FadeOutMusic(fadeTime);
+}
+
+bool checkMusic(string name) {
+	return musicList.count(name);
 }
 
 void sound_end() {
