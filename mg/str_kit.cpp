@@ -1,6 +1,12 @@
 #include "str_kit.h"
 
 vector<string> str_kit::splitOnToken(string line, char token) {
+	if (line.size()) {
+		while (line.back() == ' ') {
+			line.pop_back();
+		}
+	}
+
 	int length = (int)line.length();
 	vector<string> returnVec;
 	int lastToken = -1;
@@ -12,6 +18,8 @@ vector<string> str_kit::splitOnToken(string line, char token) {
 		}
 	}
 	returnVec.push_back(line.substr(lastToken + 1));
+
+
 
 	return returnVec;
 }
