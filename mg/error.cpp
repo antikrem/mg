@@ -58,12 +58,16 @@ namespace err {
 	}
 
 	void loggingDuty() {
+		vector<ErrorMessage> localBuffer;
 		while (logActive) {
 			//If safe to write and there is a message in the buffer
 			if (messageBuffer.size()) {
 				//Locks safety and adds to file
 				writeLock.lock();
-				for (ErrorMessage i : messageBuffer) {
+				localBuffer = messageBuffer;
+				messageBuffer.clear();
+				writeLock.unlock();
+				for (ErrorMessage i : localBuffer) {
 					if (i.cycle == 0) {
 						appendToErrorFile(i.message);
 					}
@@ -71,8 +75,7 @@ namespace err {
 						appendToErrorFile(i.cycle, i.message);
 					}
 				}
-				messageBuffer.clear();
-				writeLock.unlock();
+				localBuffer.clear();
 			}
 		}
 
@@ -97,13 +100,11 @@ namespace err {
 			count++;
 		};
 
-		writeLock.lock();
 		std::ofstream outfile;
 		outfile.open("log.txt", std::ios_base::app);
 		outfile << "SAFELY EXITED AT: " << currentTime() << std::endl;
 		outfile << "Cycles waited:" << count << std::endl;
 		outfile.close();
-		writeLock.unlock();
 	}
 
 	void logMessage(std::string message) {
