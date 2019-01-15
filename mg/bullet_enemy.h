@@ -154,7 +154,6 @@ public:
 
 		delayCounter++;
 		if (delayCounter >= inbetweenDelay) {
-			cout << "retlist: caught" << endl;
 			delayCounter = 0;
 			CUS_Polar offset;
 			for (auto angle : exitLocations) {
@@ -163,7 +162,7 @@ public:
 			}
 			
 		}
-		cout << "retlist: " << returnList.size() << endl;
+		
 		return returnList;
 	}
 
@@ -188,7 +187,6 @@ public:
 	vector<shared_ptr<Bullet>> update(CUS_Point playerPosition, CUS_Point enemyPosition) {
 		vector<shared_ptr<Bullet>> newBullets;
 		
-		cout << "Spawner size: " << bulletSpawners.size() << endl;
 		for (auto spawner : bulletSpawners) {
 			auto bullets = spawner->update(playerPosition, enemyPosition);
 			if (bullets.size()) {

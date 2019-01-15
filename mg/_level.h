@@ -93,8 +93,6 @@ private:
 
 	//Total bullet list
 	SharedEntityList<Bullet> totalBulletList;
-	//mutex lock for master bullet pool, regarding adding and cleaning flags
-	mutex bulletMasterLock;
 
 	//Powerup list
 	SharedEntityList<PowerUp> powerUps;
@@ -487,20 +485,19 @@ private:
 
 		//update enemies
 		enemyEntities.lock();
-		
 		for (auto i : enemyEntities.getEntList()) {
 			pullBack = i->update(player->getPosition(), &BulletMasterTemplatePool);
 			//If bullets were pulled, chuck it on the master list
 			if (pullBack.size()) {
-				bulletMasterLock.lock();
 				for (auto j : pullBack) {
 					totalBulletList.pushObject(j);
 				}
-				bulletMasterLock.unlock();
 			}
 		}
 		enemyEntities.cleanDeathFlags();
 		enemyEntities.unlock();
+
+		totalBulletList.pushToRenderBuffer();
 
 		//update power ups
 		powerUps.lock();
@@ -574,9 +571,7 @@ private:
 		anonEnts.unlock();
 
 		//Clear dead bullets from master bullet list
-		bulletMasterLock.lock();
 		totalBulletList.cleanDeathFlags();
-		bulletMasterLock.unlock();
 
 		PAUSELABEL:
 		//Pause game on escape press
@@ -671,11 +666,7 @@ private:
 		player->unlock();
 
 		//Draw enemy bullets
-		bulletMasterLock.lock();
-		for (auto i : totalBulletList.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
-		}
-		bulletMasterLock.unlock();
+		boxCountRunningTotal += totalBulletList.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 
 		//Draw Enemies
 		enemyEntities.lock();
