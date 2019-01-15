@@ -51,7 +51,7 @@ class SharedEntityList : public ThreadSafe {
 private:
 	vector< shared_ptr<T> > entList;
 	
-	bool listed;
+	bool listed = false;
 
 	static bool comp(shared_ptr<T> a, shared_ptr<T> b) {
 		return a->list < b->list;
@@ -66,21 +66,23 @@ public:
 		this->listed = true;
 	}
 
-	void pushObject(T* toPush) {
+	//Returns shared pointer to pushed object that can be added to a new shared entity list
+	shared_ptr<T> pushObject(T* toPush) {
+		auto sharedPush = shared_ptr<T>(toPush);
 		if (!listed)
-			entList.push_back(shared_ptr<T>(toPush));
+			entList.push_back(sharedPush);
 		else {
 			auto s = entList.begin();
 			auto e = entList.end();
-			shared_ptr<T> push = shared_ptr<T>(toPush);
 
 			entList.insert(
-				lower_bound(s, e, push, comp),
-				push);
+				lower_bound(s, e, sharedPush, comp),
+				sharedPush);
 		}
+		return sharedPush;
 	}
 
-	void pushObject(shared_ptr<T> toPush) {
+	shared_ptr<T> pushObject(shared_ptr<T> toPush) {
 		if (!listed)
 			entList.push_back(toPush);
 		else {
@@ -91,6 +93,7 @@ public:
 				lower_bound(s, e, toPush, comp),
 				toPush);
 		}
+		return toPush;
 	}
 
 	vector< shared_ptr<T> > getEntList() {

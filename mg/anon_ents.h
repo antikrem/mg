@@ -43,7 +43,7 @@ protected:
 public:
 	AnonEntInterface();
 
-	bool toPushResidual();
+	bool toAnonEntsToGet();
 
 	shared_ptr<AnonEnt> getAnonEnt();
 

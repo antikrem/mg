@@ -59,8 +59,6 @@ namespace err {
 
 	void loggingDuty() {
 		while (logActive) {
-		//	system("CLS");
-		//	cout << "BufferSize " << messageBuffer.size() << endl;
 			//If safe to write and there is a message in the buffer
 			if (messageBuffer.size()) {
 				//Locks safety and adds to file
@@ -94,16 +92,16 @@ namespace err {
 
 	void endLog() {
 		logActive = false;
-		int meme = 0;
+		int count = 0;
 		while (!safeToEnd) {
-			meme++;
+			count++;
 		};
 
 		writeLock.lock();
 		std::ofstream outfile;
 		outfile.open("log.txt", std::ios_base::app);
 		outfile << "SAFELY EXITED AT: " << currentTime() << std::endl;
-		outfile << "Cycles waited:" << meme << std::endl;
+		outfile << "Cycles waited:" << count << std::endl;
 		outfile.close();
 		writeLock.unlock();
 	}

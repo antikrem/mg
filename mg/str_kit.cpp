@@ -19,8 +19,6 @@ vector<string> str_kit::splitOnToken(string line, char token) {
 	}
 	returnVec.push_back(line.substr(lastToken + 1));
 
-
-
 	return returnVec;
 }
 

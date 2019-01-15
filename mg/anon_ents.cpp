@@ -47,7 +47,7 @@ AnonEntInterface::AnonEntInterface() {
 	pushed.clear();
 }
 
-bool AnonEntInterface::toPushResidual() {
+bool AnonEntInterface::toAnonEntsToGet() {
 	return toPush.size();
 }
 

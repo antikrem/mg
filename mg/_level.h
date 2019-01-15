@@ -74,7 +74,6 @@ private:
 	//Used for calculating shift of non-center points
 	CUS_Point playerTralingPosition;
 
-
 	//Player Bullet list
 	SharedEntityList<PlayerBullet> playerBullets;
 
@@ -91,6 +90,11 @@ private:
 	//EnemyEntity list
 	vector<EnemyEntity*> upcomingEnemyList;
 	SharedEntityList<EnemyEntity> enemyEntities;
+
+	//Total bullet list
+	SharedEntityList<Bullet> totalBulletList;
+	//mutex lock for master bullet pool, regarding adding and cleaning flags
+	mutex bulletMasterLock;
 
 	//Powerup list
 	SharedEntityList<PowerUp> powerUps;
@@ -246,7 +250,7 @@ private:
 
 				if (checkMusic(lineVec[2])) {
 					playMusic(lineVec[2]);
-					err::logConsoleMessage("Playing Track: " + lineVec[1]);
+					err::logConsoleMessage("Playing Track: " + lineVec[2]);
 				}
 				else {
 					if (fromMaster) {
@@ -278,9 +282,6 @@ private:
 	}
 
 	void initialise() {
-		//Load command list
-		loadCommandList();
-
 		//Load local store
 		loadStoreLocal(graphicsState->getGRenderer(), levelSettingsCurrent, false);
 
@@ -295,7 +296,7 @@ private:
 		backgroundObjectManager = new BackgroundObjectManager(levelSettingsCurrent);
 
 		//Create weather effects manager
-		weatherEffectManager = new WeatherEffectManager(graphicsState, rain);
+		weatherEffectManager = new WeatherEffectManager(graphicsState, noweather);
 
 		//Create Player Ent
 		if (levelSettingsCurrent->currentCharacter == 0) 
@@ -313,6 +314,9 @@ private:
 		}
 		SDL_FreeSurface(overlaySurf);
 
+		//Load bullets
+		pullBMT(&BulletMasterTemplatePool, levelSettingsCurrent);
+
 		//Load enemies
 		vector<EnemyEntity*> tempEnemyList;
 		pullEnemies(&tempEnemyList, levelSettingsCurrent);
@@ -326,6 +330,9 @@ private:
 		particleMaster->spawnParticle({ 900,100 }, { 0,0 }, particle_gold);
 
 		//playMusic("kino");
+
+		//Load command list
+		loadCommandList();
 
 		err::logLevelStart(levelSettingsCurrent);
 	}
@@ -355,10 +362,12 @@ private:
 		//Check command list
 		computeFromCommandList();
 
+		//Early declarations
 		CUS_Point windToStore;
 		enemyEntities.lock();
 		auto it = upcomingEnemyList.begin();
 		enemyEntities.unlock();
+		vector<shared_ptr<Bullet>> pullBack;
 
 		if (pauseCounter > 0)
 			pauseCounter--;
@@ -470,7 +479,7 @@ private:
 		//Pull anon ents from player
 		player->lock();
 		anonEnts.lock();
-		while (player->toPushResidual()) {
+		while (player->toAnonEntsToGet()) {
 			anonEnts.pushObject(player->getAnonEnt());
 		}
 		anonEnts.unlock();
@@ -478,8 +487,17 @@ private:
 
 		//update enemies
 		enemyEntities.lock();
+		
 		for (auto i : enemyEntities.getEntList()) {
-			i->update(player->getPosition());
+			pullBack = i->update(player->getPosition(), &BulletMasterTemplatePool);
+			//If bullets were pulled, chuck it on the master list
+			if (pullBack.size()) {
+				bulletMasterLock.lock();
+				for (auto j : pullBack) {
+					totalBulletList.pushObject(j);
+				}
+				bulletMasterLock.unlock();
+			}
 		}
 		enemyEntities.cleanDeathFlags();
 		enemyEntities.unlock();
@@ -542,8 +560,6 @@ private:
 		playerBullets.unlock();
 		enemyEntities.unlock();
 
-
-
 		//Update dialogues
 		stuckCounter = dialogue->updateDialogue(counter, getInput());
 
@@ -552,10 +568,15 @@ private:
 		floatText->updateAllTextEnts();
 		floatText->unlock();
 
-		//Clear dead anonEnts
+		//Clear dead anonEnts from anonEnt master list
 		anonEnts.lock();
 		anonEnts.cleanDeathFlags();
 		anonEnts.unlock();
+
+		//Clear dead bullets from master bullet list
+		bulletMasterLock.lock();
+		totalBulletList.cleanDeathFlags();
+		bulletMasterLock.unlock();
 
 		PAUSELABEL:
 		//Pause game on escape press
@@ -644,17 +665,24 @@ private:
 		}
 		anonEnts.unlock();
 
+		//Draw player
+		player->lock();
+		drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+		player->unlock();
+
+		//Draw enemy bullets
+		bulletMasterLock.lock();
+		for (auto i : totalBulletList.getEntList()) {
+			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+		}
+		bulletMasterLock.unlock();
+
 		//Draw Enemies
 		enemyEntities.lock();
 		for (auto i : enemyEntities.getEntList()) {
 			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		enemyEntities.unlock();
-
-		//Draw player
-		player->lock();
-		drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
-		player->unlock();
 
 		lightMaster->lock();
 		lightMaster->drawLightLevel(2);

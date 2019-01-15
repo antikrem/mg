@@ -32,6 +32,10 @@ protected:
 	//Flipped false when powewrups got
 	bool powerUpDroppable = true;
 
+	string bmtName = "";
+	int bmtDelay = 0;
+	unique_ptr< BulletMaster> bulletMaster = NULL;
+
 public:
 	EnemyEntity(int spawningCycle, string animationName, float hitbox, int health,
 		CUS_Point startingPosition, CUS_Point startingVelocity) {
@@ -52,7 +56,8 @@ public:
 	~EnemyEntity() {
 	}
 
-	void update(CUS_Point playerPosition) {
+	//Returns bullets spawned
+	vector<shared_ptr<Bullet>> update(CUS_Point playerPosition, map<string, BulletMasterTemplate*>* bmtList) {
 		internalCycle++;
 		itCurrentFrame();
 		updateMovement(playerPosition, NULL);
@@ -61,6 +66,22 @@ public:
 			flag = false;
 		if (deathCycle <= internalCycle)
 			flag = false;
+		//Check bullets
+		if (bmtName != "") {
+			if (bmtDelay == internalCycle) {
+				bulletMaster = make_unique<BulletMaster>( (*bmtList)[bmtName] );
+				cout << "caught" << endl;
+			}
+		}
+		vector<shared_ptr<Bullet>> returnList;
+		if (bulletMaster) {
+			returnList = bulletMaster->update(playerPosition, position);
+		}
+		return returnList;
+	}
+
+	BulletMaster* getBMT() {
+		return bulletMaster.get();
 	}
 
 	int getSpawningCycle() {
@@ -93,6 +114,11 @@ public:
 			PowerUpTable temp;
 			return temp;
 		}
+	}
+
+	void addBMT(string bmtName, int bmtDelay) {
+		this->bmtName = bmtName;
+		this->bmtDelay = bmtDelay;
 	}
 };
 
@@ -160,6 +186,18 @@ static void pullEnemies(vector<EnemyEntity*>* enemyVec, LevelSettings* levelSett
 				toPull->setDeathCycle(stoi(lineVec[1]));
 				enemyVec->push_back(toPull);
 				toPull = NULL;
+			}
+		}
+		else if (lineVec[0] == "BULLETMASTER") {
+			if (!toPull)
+				err::logMessage("ERROR: bulletmaster with no previous enemy at line: " + to_string(lineNo) + " in file " + filePath);
+			else {
+				if (lineVec.size() == 2) {
+					toPull->addBMT(lineVec[1], 0);
+				}
+				else if (lineVec.size() == 3) {
+					toPull->addBMT(lineVec[1], stoi(lineVec[2]));
+				}
 			}
 		}
 		else {
