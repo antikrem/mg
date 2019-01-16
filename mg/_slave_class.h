@@ -146,7 +146,6 @@ protected:
 
 		copyReference.x += shift;
 		copyReference.x += 220;
-		copyReference.y += 10;
 		if (drawTarget.alpha > 250) {
 			SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.currentFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
 		}
