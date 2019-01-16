@@ -149,8 +149,6 @@ public:
 	}
 
 	void update(float backgroundObjectVelocity, int cycle) {
-		backgroundObjects.lock();
-		
 		for (auto temp : templateList) {
 			if (random::randomFloat() < temp.chance && (cycle > temp.firstCycle) && (cycle < temp.lastCycle))
 				backgroundObjects.pushObject(new BackgroundObject(&temp));
@@ -160,8 +158,6 @@ public:
 			bObj->update(backgroundObjectVelocity);
 		}
 		backgroundObjects.cleanDeathFlags();
-
-		backgroundObjects.unlock();
 	}
 
 	void addNewTemplate(int firstCycle, int lastCycle, float minSpawnDepth, float maxSpawnDepth, SDL_Rect spawnArea, float chance, string animationAssignment) {

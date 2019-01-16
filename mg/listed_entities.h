@@ -58,8 +58,6 @@ private:
 	
 	bool listed = false;
 
-	//mutex for whole render buffer
-	mutex renderLock;
 	//Vector of info to render
 	vector< RenderInformation > renderBuffer;
 
@@ -78,7 +76,7 @@ public:
 
 	//Returns shared pointer to pushed object that can be added to a new shared entity list
 	shared_ptr<T> pushObject(T* toPush) {
-		renderLock.lock();
+		lock();
 		auto sharedPush = shared_ptr<T>(toPush);
 		if (!listed)
 			entList.push_back(sharedPush);
@@ -90,12 +88,12 @@ public:
 				lower_bound(s, e, sharedPush, comp),
 				sharedPush);
 		}
-		renderLock.unlock();
+		unlock();
 		return sharedPush;
 	}
 
 	shared_ptr<T> pushObject(shared_ptr<T> toPush) {
-		renderLock.lock();
+		lock();
 		if (!listed)
 			entList.push_back(toPush);
 		else {
@@ -106,7 +104,7 @@ public:
 				lower_bound(s, e, toPush, comp),
 				toPush);
 		}
-		renderLock.unlock();
+		unlock();
 		return toPush;
 	}
 
@@ -118,14 +116,14 @@ public:
 	/*Clears entities with death flag
 	Return value for error checking*/
 	int cleanDeathFlags() {
-		renderLock.lock();
+		lock();
 		int size = entList.size();
 		entList.erase(remove_if(
 			entList.begin(), entList.end(),
 			[](shared_ptr<T>& x) {
 			return !(x->getFlag());
 		}), entList.end());
-		renderLock.unlock();
+		unlock();
 		return (size - entList.size());
 	}
 
@@ -136,12 +134,12 @@ public:
 
 	//Pushes current renderable objects into render buffer
 	void pushToRenderBuffer() {
-		if (renderLock.try_lock()) {
+		if (tryLock()) {
 			renderBuffer.clear();
 			for (auto i : entList) {
 				renderBuffer.push_back(i->renderCopy());
 			}
-			renderLock.unlock();
+			unlock();
 		}
 		else {
 			err::logMessage("Render push failed");
@@ -153,17 +151,11 @@ public:
 		return entList[index];
 	}
 
-	/*Gets pointer to local mutex*/
-	mutex* getLock() {
-		return &renderLock;
-	}
-
 	//Renders what evers in the renderBufferList, returns number of objects rendered
 	int render(GraphicsState* gState, int shift, int darkness, float postScale) {
-		renderLock.lock();
+		lock();
 		vector< RenderInformation > secondBuffer = renderBuffer;
-		renderLock.unlock();
-
+		unlock();
 
 		int noBoxes = 0;
 		for (auto i : secondBuffer) {

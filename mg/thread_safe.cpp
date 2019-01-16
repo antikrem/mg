@@ -1,5 +1,9 @@
 #include "thread_safe.h"
 
+bool ThreadSafe::tryLock() {
+	return threadLock.try_lock();
+}
+
 void ThreadSafe::lock() {
 	threadLock.lock();
 }

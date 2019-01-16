@@ -451,7 +451,6 @@ private:
 		player->unlock();
 
 		//Pull enemies
-		enemyEntities.lock();
 		it = upcomingEnemyList.begin();
 		while (it != upcomingEnemyList.end()) {
 			if ((*it)->getSpawningCycle() == counter) {
@@ -463,24 +462,19 @@ private:
 				it++;
 			}
 		}
-		enemyEntities.unlock();
 		
 		//Pull bullets from player
 		player->lock();
-		playerBullets.lock();
 		while (player->tableResidual()) {
 			playerBullets.pushObject( player->getBullet(player->tableResidualPosition()) );
 		}
-		playerBullets.unlock();
 		player->unlock();
 
 		//Pull anon ents from player
 		player->lock();
-		anonEnts.lock();
 		while (player->toAnonEntsToGet()) {
 			anonEnts.pushObject(player->getAnonEnt());
 		}
-		anonEnts.unlock();
 		player->unlock();
 
 		//update enemies
@@ -494,8 +488,9 @@ private:
 				}
 			}
 		}
-		enemyEntities.cleanDeathFlags();
 		enemyEntities.unlock();
+		enemyEntities.cleanDeathFlags();
+		
 
 		totalBulletList.pushToRenderBuffer();
 
@@ -511,16 +506,17 @@ private:
 					{ (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.135);
 			}
 		}
-		powerUps.cleanDeathFlags();
 		powerUps.unlock();
+		powerUps.cleanDeathFlags();
 
 		//update player bullet list
 		playerBullets.lock();
 		for (auto i : playerBullets.getEntList()) {
 			i->update();
 		}
-		playerBullets.cleanDeathFlags();
 		playerBullets.unlock();
+		playerBullets.cleanDeathFlags();
+		playerBullets.pushToRenderBuffer();
 
 		//Compute interactions between enemies and player bullets
 		playerBullets.lock();
@@ -533,7 +529,6 @@ private:
 					
 					//If this bullet kills
 					if (i->getCurrentHealth() <= 0) {
-						powerUps.lock();
 						PowerUpTable temporaryTable = i->getPowerUpTable();
 						temporaryTable.life++;
 						while (temporaryTable.life-- > 0) {
@@ -548,7 +543,6 @@ private:
 						while (temporaryTable.spell--> 0) {
 							powerUps.pushObject(new PowerUp(life, i->getPosition() + toPoint({ random::randomFloat(0, 10), random::randomFloat(0, 359) }), 10));
 						}
-						powerUps.unlock();
 					}
 					
 				}
@@ -566,9 +560,7 @@ private:
 		floatText->unlock();
 
 		//Clear dead anonEnts from anonEnt master list
-		anonEnts.lock();
 		anonEnts.cleanDeathFlags();
-		anonEnts.unlock();
 
 		//Clear dead bullets from master bullet list
 		totalBulletList.cleanDeathFlags();
@@ -638,11 +630,7 @@ private:
 		weatherMasterLock.unlock();
 
 		//Draw player bullets
-		playerBullets.lock();
-		for (auto i : playerBullets.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
-		}
-		playerBullets.unlock();
+		boxCountRunningTotal += playerBullets.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 
 		//Draw powerups
 		powerUps.lock();

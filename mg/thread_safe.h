@@ -8,6 +8,8 @@ class ThreadSafe {
 private:
 	std::mutex threadLock;
 public:
+	bool tryLock();
+
 	/*Must be unlocked in the same thread*/
 	void lock();
 
