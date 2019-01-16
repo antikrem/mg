@@ -229,7 +229,7 @@ void SlaveInstance::computer() {
 			currentCyclePoint = chrono::high_resolution_clock::now();
 			i = (unsigned int)(chrono::duration_cast<std::chrono::microseconds>(currentCyclePoint - startCyclePoint)).count();
 		} while (i < 3333);
-		cycleDrawCounter += (((int)i - 3333) >= 0) ? (i - 3333) : 0;
+		cycleDrawCounter += (int)i;
 		cyclesPerDraw++;
 	}
 
@@ -292,7 +292,7 @@ void SlaveInstance::renderer() {
 						
 						fpsContainer->lock();
 						fpsContainer->updateTextByKey("fps", "fps: " + to_string((int)average));
-						fpsContainer->updateTextByKey("dropped", "drop: " + to_string((float)cycleDrawCounter/(3333* cyclesPerDraw)) + "%");
+						fpsContainer->updateTextByKey("dropped", "drop: " + to_string((3333 * cyclesPerDraw * 100) / ((float)cycleDrawCounter)) + "%");
 						fpsContainer->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
 						fpsContainer->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at "+ to_string(particleLoad) + "%");
 						fpsContainer->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
