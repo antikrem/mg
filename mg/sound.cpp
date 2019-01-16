@@ -11,7 +11,7 @@
 /*A structure that contains a sound piece and metadata*/
 struct Sound {
 	//If true, delete on end of campaign
-	bool campaignLoad = false;
+	bool localLoad = false;
 	union Data {
 		Mix_Music* music;
 		Mix_Chunk* sound;
@@ -59,7 +59,7 @@ void setGlobalVolume(int newVolume) {
 		return;
 	}
 	volumeGlobal = newVolume;
-
+	Mix_Volume(-1, volumeGlobal);
 }
 
 void setLocalVolume(SoundChannel soundChannel, float newValue) {
@@ -82,6 +82,8 @@ void loadSoundAndMusic(LevelSettings* levelSettings) {
 
 	if (!levelSettings)
 		basePath = "assets\\sound\\";
+	else 
+		basePath = "campaigns\\" + levelSettings->campaign + "\\" + to_string(levelSettings->level) + "\\sound\\";
 
 	HANDLE fileHandle;
 	WIN32_FIND_DATA data;
@@ -101,7 +103,7 @@ void loadSoundAndMusic(LevelSettings* levelSettings) {
 			}
 			else {
 				Sound push;
-				push.campaignLoad = false;
+				push.localLoad = (bool)levelSettings;
 				push.data.sound = sample;
 				soundList[file] = push;
 			}
@@ -111,6 +113,8 @@ void loadSoundAndMusic(LevelSettings* levelSettings) {
 
 	if (!levelSettings)
 		basePath = "assets\\music\\";
+	else
+		basePath = "campaigns\\" + levelSettings->campaign + "\\" + to_string(levelSettings->level) + "\\music\\";
 
 	//Load music of a few formats
 	vector<string> seachParameters = { "*.wav" , "*.mp3", "*.flac" };
@@ -131,7 +135,7 @@ void loadSoundAndMusic(LevelSettings* levelSettings) {
 				}
 				else {
 					Sound push;
-					push.campaignLoad = false;
+					push.localLoad = (bool)levelSettings;
 					push.data.music = sample;
 					if (musicList.count(file)) {
 						err::logMessage("ERROR: A sound file was included with the same name but different extension: " + file);
@@ -146,6 +150,32 @@ void loadSoundAndMusic(LevelSettings* levelSettings) {
 		}
 	}
 
+}
+
+void freeLocalSoundAndMusic() {
+	auto it = musicList.begin();
+	
+	while (it != musicList.end()) {
+		if (it->second.localLoad) {
+			Mix_FreeMusic(it->second.data.music);
+			it = musicList.erase(it);
+		}
+		else {
+			it++;
+		}
+	}
+
+	it = soundList.begin();
+
+	while (it != soundList.end()) {
+		if (it->second.localLoad) {
+			Mix_FreeChunk(it->second.data.sound);
+			it = soundList.erase(it);
+		}
+		else {
+			it++;
+		}
+	}
 }
 
 void playSound(string soundName, SoundChannel channel) {
@@ -172,6 +202,12 @@ void stopChannel(SoundChannel channel, int ms) {
 		Mix_HaltChannel(channel);
 	else
 		Mix_FadeOutChannel(channel, ms);
+}
+
+void stopAllSoundChannels() {
+	for (int i = 0; i < SCLength; i++) {
+		Mix_HaltChannel(i);
+	}
 }
 
 void playMusic(string music) {

@@ -27,6 +27,9 @@ void setLocalVolume(SoundChannel soundChannel, float newValue);
 //For global load, feed null pointer
 void loadSoundAndMusic(LevelSettings* levelSettings);
 
+//Frees local sound and music
+void freeLocalSoundAndMusic();
+
 //Simple call to play sound in given channel
 void playSound(string soundName, SoundChannel channel);
 
@@ -35,6 +38,9 @@ void playLoopedSound(string soundName, SoundChannel channel);
 
 //Stop the channel, Optional fade
 void stopChannel(SoundChannel channel, int ms = 0);
+
+//Stop all the channels
+void stopAllSoundChannels();
 
 //Plays music once
 void playMusic(string music);

@@ -327,7 +327,8 @@ private:
 		particleMaster->spawnParticle({ 800,200 }, { 0,0 }, particle_gold);
 		particleMaster->spawnParticle({ 900,100 }, { 0,0 }, particle_gold);
 
-		//playMusic("kino");
+		//load music
+		loadSoundAndMusic(levelSettingsCurrent);
 
 		//Load command list
 		loadCommandList();
@@ -337,6 +338,10 @@ private:
 
 	void memFree() {
 		stopMusic(0);
+		stopAllSoundChannels();
+		freeLocalSoundAndMusic();
+
+
 		delete backgroundManager;
 		backgroundManager = NULL;
 
@@ -491,7 +496,6 @@ private:
 		enemyEntities.unlock();
 		enemyEntities.cleanDeathFlags();
 		
-
 		totalBulletList.pushToRenderBuffer();
 
 		//update power ups
