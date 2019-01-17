@@ -41,11 +41,22 @@ namespace para {
 	}
 	
 	int getShift(CUS_Point pos) {
-		return (int)(-1 * ((float)(pos.x) / (float)WORK_SPACE_X)*((float)WORK_SPACE_X - (float)RENDERED_X));
+		CUS_Point posAmmend = pos;
+		if (pos.x <= F(SAFESPACE)) {
+			posAmmend.x = 0;
+		}
+		else if (pos.x >= F(WORK_SPACE_X - SAFESPACE) ) {
+			posAmmend.x = WORK_SPACE_X;
+		}
+		else {
+			posAmmend.x = F(1.35714) * pos.x - F(271.428);
+		}
+		return (int)(-1 * ((float)(posAmmend.x) / (float)WORK_SPACE_X)*((float)WORK_SPACE_X - (float)RENDERED_X));
 	}
 
 	int getShift(CUS_Point player, CUS_Point objectMid, float depth) {
 		int baseShift = getShift(player);
+
 		int offset = (int)(getSizeScaler(depth) * (objectMid.x - player.x));
 		return (offset + baseShift);
 	}
