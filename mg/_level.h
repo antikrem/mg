@@ -24,9 +24,6 @@ To be used with _controller.cpp*/
 
 #define SHIFTVELOCITY 4.5F
 
- int getShift(CUS_Point pos) {
-	return (int)(-1 * ((float)(pos.x) / (float)WORK_SPACE_X)*(WORK_SPACE_X - RENDERED_X));
-}
 
 class Level : public SlaveInstance {
 private:
@@ -381,10 +378,10 @@ private:
 		if (getInput().shift) {
 			pass;
 		}
-		else if ( trueShift + SHIFTVELOCITY < getShift(player->getPosition()) ) {
+		else if ( trueShift + SHIFTVELOCITY < para::getShift(player->getPosition()) ) {
 			trueShift += SHIFTVELOCITY;
 		}
-		else if ( trueShift - SHIFTVELOCITY > getShift(player->getPosition()) ) {
+		else if ( trueShift - SHIFTVELOCITY > para::getShift(player->getPosition()) ) {
 			trueShift -= SHIFTVELOCITY;
 		}
 		shift = (int)trueShift;
@@ -496,12 +493,16 @@ private:
 		enemyEntities.unlock();
 		enemyEntities.cleanDeathFlags();
 		
+		totalBulletList.lock();
+		for (auto i : totalBulletList.getEntList()) {
+			i->update(player->getPosition());
+		}
+		totalBulletList.unlock();
 		totalBulletList.pushToRenderBuffer();
 
 		//update power ups
 		powerUps.lock();
 		for (auto i : powerUps.getEntList()) {
-			;
 			if ( i->updatePosition(player->getPosition()) ) {
 				CUS_Point tempPowerPos = i->getPosition();
 				CUS_Point tempRandPowerPos = { 70 * random::randomFloat() * random::sign(), 70 * random::randomFloat() * random::sign() };
