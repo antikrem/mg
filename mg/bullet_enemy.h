@@ -11,10 +11,10 @@ public:
 	float hitbox;
 	map <int, MovementCommand> movementList;
 	CUS_Polar initialVelocity = { 0, 0 };
-	bool relativeToSpawner = false;
 
-	BulletTemplate(string animationName) {
+	BulletTemplate(string animationName, CUS_Polar initialVelocity) {
 		this->animationName = animationName;
+		this->initialVelocity = initialVelocity;
 	}
 
 	void addMovementCommand(int cycle, MovementCommand movementCommand) {
@@ -91,7 +91,9 @@ private:
 public:
 	Bullet(BulletTemplate* bulletTemplate, CUS_Point position, float exitAngle) {
 		auto temp = bulletTemplate->initialVelocity;
-		temp.angle += bulletTemplate->relativeToSpawner ? exitAngle : 0;
+		temp.angle += exitAngle;
+		this->angle = temp.angle;
+		temp.magnitude = temp.magnitude ? temp.magnitude : F(0.00000001);
 		this->velocity = toPoint(temp);
 		this->position = position;
 
@@ -264,9 +266,15 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 				}
 			}
 		}
-		else if (lineVec.size() == 2 && lineVec[0] == "BULLET") {
-			mode = bt;
-			btToPull = new BulletTemplate(lineVec[1]); //Animation name
+		else if (lineVec[0] == "BULLET") {
+			if (lineVec.size() == 4) {
+				mode = bt;
+				btToPull = new BulletTemplate(lineVec[1], { stof(lineVec[2]),  stof(lineVec[3]) }); //Animation name
+			} 
+			else {
+				cout << "BULLET size check TODO";
+			}
+			
 		}
 		else if (lineVec.size() == 9 && lineVec[0] == "MOVE") {
 			MovementCommand currentUpdate(
