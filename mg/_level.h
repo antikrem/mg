@@ -302,7 +302,7 @@ private:
 		floatText = new TextContainer(textRenderer);
 
 		//Load overlay
-		SDL_Surface* overlaySurf = SDL_LoadBMP("assets//UI//overlay.bmp");
+		SDL_Surface* overlaySurf = IMG_Load("assets//UI//overlay.png");
 		overlay = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), overlaySurf);
 		if (!overlay) {
 			err::logMessage("Overlay file corrupted or missing, check assets//UI//overlay.bmp, or reinstall");
@@ -655,7 +655,13 @@ private:
 
 		//Draw player
 		player->lock();
-		drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+		if (player->getTargetable()) {
+			drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+		}
+		else if ((cycle %10) <5 ) {
+			drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+		}
+		
 		player->unlock();
 
 		//Draw enemy bullets
