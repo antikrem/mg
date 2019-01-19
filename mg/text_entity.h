@@ -140,4 +140,27 @@ public:
 	TextEntity* getEnt(string name);
 };
 
+enum Fonts {
+	sans
+};
+
+struct fontLibrary {
+	int size;
+
+};
+
+class TextGlobalMaster {
+	GraphicsState* gState;
+	SDL_Renderer* gRenderer;
+
+	map<Font, map<int, TTF_Font*>> fontSources;
+
+	TextGlobalMaster(GraphicsState* gState) {
+		this->gState = gState;
+		this->gRenderer = gState->getGRenderer();
+	}
+
+	~TextGlobalMaster();
+};
+
 #endif

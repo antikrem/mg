@@ -1,4 +1,4 @@
 BMT default
-BULLET default_bullet
-SPAWNER 0 0 0 0 4
-EXIT 10 20 30 40 50 60 70 80 90
+BULLET default_bullet 0.1 0
+SPAWNER 0 0 0 0 50
+EXIT 90

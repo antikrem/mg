@@ -13,13 +13,38 @@ To be used only in _level.h*/
 #include "anon_ents.h"
 
 #define MAX_BULLETS_PER_PLAYER 30
-#define PLAYER_MAX_DASH_VELOCITY (float)15
-#define PLAYER_ACCELERATION (float)0.5
-#define PLAYER_MAX_VELOCITY (float)5
-#define PLAYER_MAX_FOCUS_VELOCITY (float)2
 
-#define DASH_DURATION 17
-#define DASH_COOLDOWN 50
+//Movement characteristices
+#define PLAYER_MAX_DASH_VELOCITY (float)13.2
+#define PLAYER_ACCELERATION (float)0.62
+#define PLAYER_MAX_VELOCITY (float)4.72
+#define PLAYER_MAX_FOCUS_VELOCITY (float)1.4
+
+#define DASH_DURATION 18
+#define DASH_COOLDOWN 45
+
+//Mechanics constants
+#define RAGE_BUILD 20
+#define MAX_RAGE 100
+#define RAGE_RESET 720
+#define BASE_POWER_BUILD 10
+#define MAX_POWER 100
+#define POWER_DRAIN F(0.2)
+#define POWER_DRAIN_SHIFT F(0.1)
+
+static float edgeHitPower(float currentPower, float rage) {
+	float temp = BASE_POWER_BUILD * (1 - (currentPower / MAX_POWER)) * (1 / (5*(rage/ MAX_RAGE)+1));
+	if ((currentPower + temp) > 100)
+		temp = 100 - currentPower;
+	temp = (temp > 0 ? temp : 0);
+	return temp;
+}
+
+enum Pos {
+	noPos,
+	leftPos,
+	rightPos
+};
 
 class PlayerEntity : public ListedEntity, public ThreadSafe, public AnonEntInterface {
 protected:
@@ -41,6 +66,13 @@ protected:
 	bool targetable = true;
 	int targetableCounter = 0;
 	int onRails = 0;
+
+	//Gameplay stuff
+	float power = 0;
+	float rage = 0;
+	float delay = 0;
+	Pos lastEdge = noPos;
+
 
 	void cleanBulletTable() {
 		for (int i = 0; i < MAX_BULLETS_PER_PLAYER; i++) {
@@ -156,9 +188,50 @@ public:
 			if (playIn.shift) {
 				if (position.x < abs(shift+4))
 					position.x = F(abs(shift + 4));
-				if (position.x > (abs(shift + 4) + RENDERED_X))
-					position.x = F(abs(shift + 4) + RENDERED_X);
+				if (position.x > (abs(shift - 4) + RENDERED_X))
+					position.x = F(abs(shift - 4) + RENDERED_X);
+				//Also drain power at shifted rate
+				if (power > 0) {
+					power -= POWER_DRAIN_SHIFT;
+				}
 			}
+			//If not shifted, check mechanics
+			else {
+				if ((position.y < (WORK_SPACE_Y - RAGE_RESET)) && (rage>1) ) {
+					targetable = false;
+					targetableCounter = (int)rage;
+					rage = 0;
+					cout << "RAGE_RESET" << endl;
+				} 
+				else if (position.x < SAFESPACE) {
+					if (lastEdge == noPos || lastEdge == rightPos) {
+						lastEdge = leftPos;
+						power += edgeHitPower(power, rage);
+						if (rage < MAX_RAGE) {
+							rage += RAGE_BUILD;
+						}
+						cout << rage << endl;
+						cout << power << endl;
+					}
+				}
+				else if (position.x > (WORK_SPACE_X - SAFESPACE) ) {
+					if (lastEdge == noPos || lastEdge == leftPos) {
+						lastEdge = rightPos;
+						power += edgeHitPower(power, rage);
+						if (rage < MAX_RAGE) {
+							rage += RAGE_BUILD;
+						}
+						cout << rage << endl;
+						cout << power << endl;
+					}
+				}
+
+				//Also drain power
+				if (power > 0) {
+					power -= POWER_DRAIN;
+				}
+			}
+
 		}
 		else {
 			onRails--;
@@ -177,6 +250,10 @@ public:
 
 	bool getOnRails() {
 		return (onRails < 0);
+	}
+
+	float getRage() {
+		return rage;
 	}
 
 	virtual void prepareBulletTable() {
