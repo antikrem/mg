@@ -19,7 +19,7 @@ const int WORK_SPACE_Y = 1080;
 const int RENDERED_X = 960;
 
 //"safe space" area to side that is not restricted
-const int SAFESPACE = 200;
+const int SAFESPACE = 400;
 
 //Full area rendered
 const int FULL_SPACE_X = 1920;
