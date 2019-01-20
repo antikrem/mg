@@ -68,6 +68,7 @@ int main(int argc, char* args[]) {
 
 	GraphicsState* graphicsState = new GraphicsState();
 	TextRenderer* textRenderer = new TextRenderer(graphicsState);
+	TextGlobalMaster* txtGlobalMaster = new TextGlobalMaster(graphicsState);
 	loadStore(graphicsState->getGRenderer());
 	
 	SlaveInstance* currentState = NULL;
@@ -96,7 +97,7 @@ int main(int argc, char* args[]) {
 				currentState = new Level; break;
 			}
 
-			currentState->initialiseInstance(graphicsState, textRenderer, levelSettings);
+			currentState->initialiseInstance(graphicsState, textRenderer, levelSettings, txtGlobalMaster);
 			levelSettings->currentStage = levelSettings->nextStage;
 
 			thread renderThread(&SlaveInstance::computer, currentState);
@@ -116,7 +117,7 @@ int main(int argc, char* args[]) {
 			if (currentState != NULL) {
 				currentState->killThreads();
 				while (!currentState->readyToFree()) {
-					cout << "waiting" << endl;
+					cout << "waiting on level" << endl;
 				}
 				delete currentState;
 				currentState = NULL;
@@ -130,7 +131,7 @@ int main(int argc, char* args[]) {
 			if (currentState != NULL) {
 				currentState->killThreads();
 				while (!currentState->readyToFree()) {
-					cout << "waiting" << endl;
+					cout << "waiting on renderer" << endl;
 				}
 				delete currentState;
 				currentState = NULL;

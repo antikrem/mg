@@ -354,10 +354,14 @@ void SlaveInstance::particler() {
 	}
 
 	particleActive = false;
+	if (!rendererActive) {
+		delete particleMaster;
+	}
 }
 
-void SlaveInstance::initialiseInstance(GraphicsState* graphicsState, TextRenderer* textRenderer, LevelSettings* currentSettings) {
+void SlaveInstance::initialiseInstance(GraphicsState* graphicsState, TextRenderer* textRenderer, LevelSettings* currentSettings, TextGlobalMaster* textGlobalMaster) {
 	this->textRenderer = textRenderer;
+	this->textGlobalMaster = textGlobalMaster;
 	this->graphicsState = graphicsState;
 	this->levelSettingsCurrent = currentSettings;
 	this->particleMaster = new ParticleManager(graphicsState);
@@ -387,6 +391,9 @@ void SlaveInstance::initialiseInstance(GraphicsState* graphicsState, TextRendere
 	}
 	consoleContainer->newTextEnt("current", ": ", { (float)640, (float)NUMBER_OF_CONSOLE_MESSAGES*35 + 5 }, sans32, red, topLeft, false,
 		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
+
+	consoleTextMaster = new TextMaster(textGlobalMaster);
+
 
 }
 

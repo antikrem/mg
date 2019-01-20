@@ -7,6 +7,8 @@
 #include "SDL_ttf.h"
 #include "error.h"
 #include "graphics_state.h"
+#include "constants.h"
+#include "listed_entities.h"
 
 #include <map>
 #include <algorithm>
@@ -18,7 +20,8 @@ enum Alignment {
 	topLeft,
 	midLeft,
 	midMid,
-	topRight
+	topRight,
+	bottomLeft
 };
 
 enum Font {
@@ -37,6 +40,8 @@ enum Color {
 	black,
 	gold
 };
+
+
 
 /*Rendering context for text objects*/
 struct TextRenderer : public ThreadSafe {
@@ -114,7 +119,7 @@ public:
 
 class TextContainer : public ThreadSafe {
 protected:
-	SDL_Renderer * RENDERER;
+	SDL_Renderer* RENDERER;
 	TextRenderer* TEXT_RENDERER;
 	map<string, unique_ptr<TextEntity> > textMap;
 
@@ -141,11 +146,32 @@ public:
 };
 
 enum Fonts {
-	sans
+	sansFontStyle
 };
 
-struct fontLibrary {
-	int size;
+enum FontColors {
+	whiteFontColor,
+	redFontColor,
+	blackFontColor,
+	goldFontColor
+};
+
+#define FONTCOLOURLENGTH 4
+
+#define CHAR2FONTINDEX(a) ((int)a - 32)
+#define FONTINDEX2CHAR(a) ((char)(a+32))
+#define FONTINDEXSIZE CHAR2FONTINDEX('}')+1
+
+#define INT2COLOR(a) static_cast<FontColors>(a)
+
+struct FontLibrary {
+	int fontSize;
+	Fonts font;
+	TTF_Font* baseFont = NULL;
+	TTF_Font* boldFont = NULL;
+	SDL_Texture* baseTextureList[FONTINDEXSIZE][FONTCOLOURLENGTH];
+	SDL_Texture* boldTextureList[FONTINDEXSIZE][FONTCOLOURLENGTH];
+	int characterWidth[FONTINDEXSIZE];
 
 };
 
@@ -153,14 +179,283 @@ class TextGlobalMaster {
 	GraphicsState* gState;
 	SDL_Renderer* gRenderer;
 
-	map<Font, map<int, TTF_Font*>> fontSources;
+	map<Fonts, map<int, FontLibrary>> fontSources;
+	map<FontColors, SDL_Color> colors;
+
+	void loadAFont(Fonts font, int size, string fontName) {
+		if (fontSources.count(font) != 0) {
+			if (fontSources[font].count(size) != 0) {
+				err::logMessage("WARNING: A font was requested when it already exists, no changes made");
+				return;
+			}
+		}
+
+		//Prepare library
+		FontLibrary fontLibrary;
+		fontLibrary.fontSize = size;
+		fontLibrary.font = font;
+		string location = "assets\\fonts\\" + fontName + ".ttf";
+		fontLibrary.baseFont = TTF_OpenFont(location.c_str(), size);
+		fontLibrary.boldFont = TTF_OpenFont(location.c_str(), size);
+		TTF_SetFontOutline(fontLibrary.boldFont, 2);
+
+		//Create textures and save char widths
+		string s;
+		SDL_Surface* surf = NULL;
+		SDL_Surface* surfOutline = NULL;
+		SDL_Rect blitzRect;
+		for (int i = 0; i < FONTCOLOURLENGTH; i++) {
+			for (int j = 0; j < FONTINDEXSIZE; j++) {
+				s = FONTINDEX2CHAR(j);
+				surf = TTF_RenderText_Solid(fontLibrary.baseFont, s.c_str(), colors[INT2COLOR(i)]);
+				fontLibrary.baseTextureList[j][i] = SDL_CreateTextureFromSurface(gRenderer, surf);
+				surfOutline = TTF_RenderText_Solid(fontLibrary.boldFont, s.c_str(), colors[INT2COLOR(i)]);
+				blitzRect = { 1,1,surf->w, surf->h };
+				SDL_BlitSurface(surf, NULL, surfOutline, &blitzRect);
+				fontLibrary.boldTextureList[j][i] = SDL_CreateTextureFromSurface(gRenderer, surf);
+				fontLibrary.characterWidth[j] = surf->w;
+				SDL_FreeSurface(surf);
+				SDL_FreeSurface(surfOutline);
+
+				fontSources[font][size] = fontLibrary;
+			}
+		}
+		FontLibrary lib = fontLibrary;
+	}
+
+public:
 
 	TextGlobalMaster(GraphicsState* gState) {
 		this->gState = gState;
 		this->gRenderer = gState->getGRenderer();
+		cout << FONTINDEXSIZE << endl;
+
+		//colors
+		colors[whiteFontColor] = { 255, 255, 255 };
+		colors[redFontColor] = { 255, 0, 0 };
+		colors[blackFontColor] = { 0,0,0 };
+		colors[goldFontColor] = { 255,215,0,255 };
+
+		loadAFont(sansFontStyle, 36, "Sans");
 	}
 
-	~TextGlobalMaster();
+	~TextGlobalMaster() {
+		cout << "TODO:" << endl;
+	}
+
+	SDL_Renderer* getRenderer() {
+		return gRenderer;
+	}
+
+	//Checks font and returns true if not there
+	bool checkFontInMaster(Fonts font, int size, string fontName) {
+		if (fontSources.count(font) != 0) {
+			if (fontSources[font].count(size) != 0) {
+				return true;
+			}
+		}
+		loadAFont(font, size, fontName);
+		return false;
+	}
+
+	//TODO: check
+	FontLibrary getFontLibrary(Fonts font, int size) {
+		fontSources[font][size];
+	}
+};
+
+//Container to interface with TextMaster
+class TextEntityA : public ThreadSafe, public ListedEntity {
+	int internalCounter = 0;
+	int cycles = -1;
+
+	//Counts up from zero when allocating no reference objects
+	int allocator = 0;
+
+	bool outline = false;
+
+	string text;
+	Alignment alignment;
+	int size;
+	Fonts font;
+	FontColors color;
+	int spacing = 2;
+
+	int textWrapeLength = 0;
+
+	float alphaVelocity = 0;
+
+public:
+	TextEntityA(string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment, int cycles, bool outline) {
+		this->text = text;
+		this->position = position;
+		this->size = size;
+		this->font = font;
+		this->color = color;
+		this->alignment = alignment;
+		this->cycles = cycles;
+		this->outline = outline;
+	}
+
+	void setAlphaEx(float alpha, float alphaVelocity) {
+		lock();
+		this->alpha = alpha;
+		this->alphaVelocity = alphaVelocity;
+		unlock();
+	}
+
+	void setMovement(CUS_Point velocity, CUS_Point acceleration) {
+		lock();
+		this->velocity = velocity;
+		this->acceleration = acceleration;
+		unlock();
+	}
+	
+	void update() {
+		lock();
+		internalCounter++;
+
+		if (cycles != -1) {
+			if (cycles <= internalCounter) {
+				flag = false;
+			}
+		}
+
+		velocity += acceleration;
+		position += velocity;
+		alpha += alphaVelocity;
+		unlock();
+	}
+
+	void render(int shift, TextGlobalMaster* textGlobalMaster) {
+		lock();
+		FontLibrary lib = textGlobalMaster->getFontLibrary(font, size);
+		SDL_Rect textPos;
+
+		//Get length of entire string for balancing purposes
+		int lengthOfString = 0;
+		if not(textWrapeLength) {
+			for (auto c : text) {
+				lengthOfString += lib.characterWidth[CHAR2FONTINDEX(c)];
+			}
+		}
+		else {
+			//TODO Wrap text look up too
+		}
+
+		//Switch for top y position
+		switch (alignment) {
+		case topLeft:
+		case topRight:
+			textPos.y = (int)position.y;
+			break;
+		case midLeft:
+		case midMid:
+			textPos.y = (int)position.y + (int)(size/2);
+			break;
+		case bottomLeft:
+			textPos.y = (int)position.y + (int)size;
+			break;
+		}
+		textPos.h = size;
+
+		//Switch for x position
+		switch (alignment) {
+		case topLeft:
+		case midLeft:
+		case bottomLeft:
+			textPos.x = (int)position.x;
+			break;
+		case midMid:
+			textPos.y = (int)position.y + (int)(lengthOfString / 2);
+			break;
+		case topRight:
+			textPos.y = (int)position.y - (int)lengthOfString;
+			break;
+		}
+
+		//Begin drawing
+		for (auto c : text) {
+			textPos.w = lib.characterWidth[CHAR2FONTINDEX(c)];
+			auto texture = outline ? lib.boldTextureList[CHAR2FONTINDEX(c)][color] : lib.baseTextureList[CHAR2FONTINDEX(c)][color];
+			SDL_RenderCopyEx(textGlobalMaster->getRenderer(), texture, NULL, &textPos, 0, NULL, SDL_FLIP_NONE);
+			textPos.x += textPos.w + spacing;
+		}
+
+		unlock();
+	}
+
+	void changeText(string text) {
+		lock();
+		this->text = text;
+		unlock();
+	}
+
+};
+/*
+Locked when textEntityList is changed in size.
+*/
+class TextMaster {
+	map< string, unique_ptr<TextEntityA> > textEntityList;
+
+	//Changing textEntityList size requires both locks to be engaged
+	mutex renderLock;
+	mutex updateLock;
+
+	TextGlobalMaster* textGlobalMaster = NULL;
+	SDL_Renderer* RENDERER = NULL;
+
+public:
+	TextMaster(TextGlobalMaster* master) {
+		textGlobalMaster = master;
+		RENDERER = master->getRenderer();
+	}
+
+	~TextMaster() {
+		textEntityList.clear();
+	}
+
+	void updateAllTextEnts() {
+		updateLock.lock();
+		for (auto const& i : textEntityList) {
+			i.second->update();
+
+		}
+
+		renderLock.lock();
+		for (std::map<string, unique_ptr<TextEntityA>>::iterator it = textEntityList.begin(); it != textEntityList.end();) {
+			if (!(it->second->getFlag())) {
+				it = textEntityList.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+		renderLock.unlock();
+		updateLock.unlock();
+	}
+
+	void renderText(int shift) {
+		renderLock.lock();
+		for (auto const& i : textEntityList) {
+			i.second->render(shift, textGlobalMaster);
+		}
+		renderLock.unlock();
+	}
+
+	//Use an empty string to 
+	void addTextEnt(string identifier, string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment = midMid,
+		bool outline = false, CUS_Polar velocity = { 0,0 }, CUS_Polar acceleration = { 0,0 },
+		int cycles = -1, float alpha = 255, float alphaVelocity = 0) {
+		if (textEntityList.count(identifier)) {
+			err::logMessage("WARNING: A text ent was added when it already existed, existing ent changed instead");
+		}
+
+		auto textEnt = new TextEntityA(text, position, size, font, color, alignment, cycles, outline);
+		textEnt->setMovement(velocity.toPoint(), acceleration.toPoint());
+		textEnt->setAlphaEx(alpha, alphaVelocity);
+		textEntityList[identifier] = make_unique<TextEntityA>(textEnt);
+	}
 };
 
 #endif

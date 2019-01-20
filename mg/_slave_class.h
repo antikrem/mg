@@ -39,7 +39,9 @@ protected:
 	GraphicsState* graphicsState;
 	//Text environment
 	TextRenderer* textRenderer = NULL;
-	//Level state information
+	//Enhanced text environment
+	TextGlobalMaster* textGlobalMaster = NULL;
+
 	LevelSettings* levelSettingsCurrent = NULL;
 
 	//Thread control variables
@@ -87,6 +89,7 @@ protected:
 	string consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES] = { " ", " ", " ", " ", " " } ;
 	string currentConsoleLine;
 	TextContainer* consoleContainer = NULL;
+	TextMaster* consoleTextMaster = NULL;
 
 	/*Updates console view, feed bool to push history*/
 	void updateConsoleView(bool push);
@@ -205,7 +208,7 @@ public:
 	void particler();
 
 	/*Initialises values required for rendering and other neccessary things*/
-	void initialiseInstance(GraphicsState* graphicsState, TextRenderer* textRenderer, LevelSettings* currentSettings);
+	void initialiseInstance(GraphicsState* graphicsState, TextRenderer* textRenderer, LevelSettings* currentSettings, TextGlobalMaster* txtGlobalMaster);
 
 	void setCurrentInput(Input newInput);
 
