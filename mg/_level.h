@@ -508,7 +508,7 @@ private:
 				CUS_Point tempRandPowerPos = { 70 * random::randomFloat() * random::sign(), 70 * random::randomFloat() * random::sign() };
 				CUS_Point shiftPowerup = { 220, 10 };
 				floatTextMaster->addTextEnt("", to_string(i->getPoints()), tempPowerPos + tempRandPowerPos + shiftPowerup, 22, sansFontStyle, whiteFontColor, midMid, 0,
-					false, { (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.105);
+					true, { (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.108);
 			}
 		}
 		powerUps.unlock();

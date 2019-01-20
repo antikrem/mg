@@ -27,7 +27,7 @@ private:
 
 		backgroundManager = new BackgroundManager(graphicsState->getGRenderer(), levelSettingsCurrent);
 
-		opener = new ButtonManager(textRenderer, gold, sans36);
+		opener = new ButtonManager(textGlobalMaster, goldFontColor, sansFontStyle, 36 );
 		opener->addButton("MEME", { 100, 200, 200, 36 }, but1 );
 		opener->addButton("DREAM", { 100, 500, 200, 36 }, but2);
 		opener->activate(150);

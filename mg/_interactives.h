@@ -33,19 +33,21 @@ private:
 
 	SDL_Texture* marker = NULL;
 
-	TextContainer* buttonFaces = NULL;
-	TextRenderer* tRenderer = NULL;
-	Color color;
-	Font font;
+	TextMaster* buttonFaces = NULL;
+	TextGlobalMaster* textGlobalMaster = NULL;
+	FontColors color;
+	Fonts font;
+	int fontSize;
 public:
-	ButtonManager(TextRenderer* tRenderer, Color color, Font font) {
-		this->tRenderer = tRenderer;
-		buttonFaces = new TextContainer(tRenderer);
+	ButtonManager(TextGlobalMaster* textGlobalMaster, FontColors color, Fonts font, int fontSize) {
+		this->textGlobalMaster = textGlobalMaster;
+		buttonFaces = new TextMaster(textGlobalMaster);
 		this->color = color;
 		this->font = font;
+		this->fontSize = fontSize;
 
 		SDL_Surface* markerSurf = SDL_LoadBMP("assets\\menu\\marker.bmp");
-		marker = SDL_CreateTextureFromSurface(tRenderer->gRenderer, markerSurf);
+		marker = SDL_CreateTextureFromSurface(textGlobalMaster->getRenderer(), markerSurf);
 		SDL_FreeSurface(markerSurf);
 	}
 
@@ -65,8 +67,7 @@ public:
 		for (Button button : buttonList) {
 			i++;
 			position = { button.position.x + ((float)button.position.w / 2) , button.position.y + ((float)button.position.h / 2) };
-			buttonFaces->newTextEnt(to_string(i), button.text, position, font, color,
-				midMid, true, { 0,0 }, { 0,0 }, INT_MAX, 0, (float)255 / fadeInDelay);
+			buttonFaces->addTextEnt(to_string(i), button.text, position, fontSize, font, color, midMid, 0, true, { 0,0 }, { 0,0 }, -1, 0, (float)255 / fadeInDelay);
 		}
 	}
 
@@ -149,7 +150,7 @@ public:
 				renderbox.y = buttonList[currentButton].position.y + (buttonList[currentButton].position.h / 2) + -27;
 				renderbox.h = 54;
 				renderbox.w = 42;
-				SDL_RenderCopy(tRenderer->gRenderer, marker, NULL, &renderbox);
+				SDL_RenderCopy(textGlobalMaster->getRenderer(), marker, NULL, &renderbox);
 			}
 		}
 	}

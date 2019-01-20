@@ -172,7 +172,9 @@ struct FontLibrary {
 	SDL_Texture* baseTextureList[FONTINDEXSIZE][FONTCOLOURLENGTH];
 	SDL_Texture* boldTextureList[FONTINDEXSIZE][FONTCOLOURLENGTH];
 	int characterWidth[FONTINDEXSIZE];
+	int characterWidthBold[FONTINDEXSIZE];
 	int realHeight;
+	int realHeightBold;
 
 };
 
@@ -209,14 +211,16 @@ class TextGlobalMaster {
 		for (int i = 0; i < FONTCOLOURLENGTH; i++) {
 			for (int j = 0; j < FONTINDEXSIZE; j++) {
 				s = FONTINDEX2CHAR(j);
-				surf = TTF_RenderText_Solid(fontLibrary.baseFont, s.c_str(), colors[INT2COLOR(i)]);
+				surf = TTF_RenderText_Blended(fontLibrary.baseFont, s.c_str(), colors[INT2COLOR(i)]);
 				fontLibrary.baseTextureList[j][i] = SDL_CreateTextureFromSurface(gRenderer, surf);
-				surfOutline = TTF_RenderText_Solid(fontLibrary.boldFont, s.c_str(), colors[INT2COLOR(i)]);
-				blitzRect = { 1,1,surf->w, surf->h };
+				surfOutline = TTF_RenderText_Blended(fontLibrary.boldFont, s.c_str(), colors[blackFontColor]);
+				blitzRect = { 2,2,surf->w, surf->h };
 				SDL_BlitSurface(surf, NULL, surfOutline, &blitzRect);
-				fontLibrary.boldTextureList[j][i] = SDL_CreateTextureFromSurface(gRenderer, surf);
+				fontLibrary.boldTextureList[j][i] = SDL_CreateTextureFromSurface(gRenderer, surfOutline);
 				fontLibrary.realHeight = surf->h;
+				fontLibrary.realHeightBold = surfOutline->h;
 				fontLibrary.characterWidth[j] = surf->w;
+				fontLibrary.characterWidthBold[j] = surfOutline->w;
 				SDL_FreeSurface(surf);
 				SDL_FreeSurface(surfOutline);
 
@@ -344,15 +348,24 @@ public:
 		//Get length of entire string for balancing purposes
 		int lengthOfString = 0;
 		if not(textWrapeLength) {
-			for (auto c : text) {
-				lengthOfString += lib.characterWidth[CHAR2FONTINDEX(c)] + spacing;
+			if not(outline) {
+				for (auto c : text) {
+					lengthOfString += lib.characterWidth[CHAR2FONTINDEX(c)] + spacing;
+				}
 			}
+			else {
+				for (auto c : text) {
+					lengthOfString += lib.characterWidthBold[CHAR2FONTINDEX(c)] + spacing;
+				}
+			}
+			
 		}
 		else {
 			//TODO Wrap text look up too
 		}
 
 		//Switch for top y position
+		int temp = outline ? lib.realHeightBold : lib.realHeight;
 		switch (alignment) {
 		case topLeft:
 		case topRight:
@@ -360,13 +373,13 @@ public:
 			break;
 		case midLeft:
 		case midMid:
-			textPos.y = (int)position.y + (int)(size/2);
+			textPos.y = (int)position.y + (int)(temp /2);
 			break;
 		case bottomLeft:
-			textPos.y = (int)position.y + (int)size;
+			textPos.y = (int)position.y + (int)temp;
 			break;
 		}
-		textPos.h = lib.realHeight;
+		textPos.h = temp;
 
 		//Switch for x position
 		switch (alignment) {
@@ -386,7 +399,10 @@ public:
 
 		//Begin drawing
 		for (auto c : text) {
-			textPos.w = lib.characterWidth[CHAR2FONTINDEX(c)];
+			if not(outline)
+				textPos.w = lib.characterWidth[CHAR2FONTINDEX(c)];
+			else 
+				textPos.w = lib.characterWidthBold[CHAR2FONTINDEX(c)];
 			auto texture = outline ? lib.boldTextureList[CHAR2FONTINDEX(c)][color] : lib.baseTextureList[CHAR2FONTINDEX(c)][color];
 			if (alpha > 250) {
 				SDL_RenderCopyEx(textGlobalMaster->getRenderer(), texture, NULL, &textPos, 0, NULL, SDL_FLIP_NONE);
