@@ -172,6 +172,7 @@ struct FontLibrary {
 	SDL_Texture* baseTextureList[FONTINDEXSIZE][FONTCOLOURLENGTH];
 	SDL_Texture* boldTextureList[FONTINDEXSIZE][FONTCOLOURLENGTH];
 	int characterWidth[FONTINDEXSIZE];
+	int realHeight;
 
 };
 
@@ -204,6 +205,7 @@ class TextGlobalMaster {
 		SDL_Surface* surf = NULL;
 		SDL_Surface* surfOutline = NULL;
 		SDL_Rect blitzRect;
+	
 		for (int i = 0; i < FONTCOLOURLENGTH; i++) {
 			for (int j = 0; j < FONTINDEXSIZE; j++) {
 				s = FONTINDEX2CHAR(j);
@@ -213,6 +215,7 @@ class TextGlobalMaster {
 				blitzRect = { 1,1,surf->w, surf->h };
 				SDL_BlitSurface(surf, NULL, surfOutline, &blitzRect);
 				fontLibrary.boldTextureList[j][i] = SDL_CreateTextureFromSurface(gRenderer, surf);
+				fontLibrary.realHeight = surf->h;
 				fontLibrary.characterWidth[j] = surf->w;
 				SDL_FreeSurface(surf);
 				SDL_FreeSurface(surfOutline);
@@ -220,7 +223,7 @@ class TextGlobalMaster {
 				fontSources[font][size] = fontLibrary;
 			}
 		}
-		FontLibrary lib = fontLibrary;
+
 	}
 
 public:
@@ -237,6 +240,7 @@ public:
 		colors[goldFontColor] = { 255,215,0,255 };
 
 		loadAFont(sansFontStyle, 36, "Sans");
+		loadAFont(sansFontStyle, 32, "Sans");
 	}
 
 	~TextGlobalMaster() {
@@ -260,7 +264,7 @@ public:
 
 	//TODO: check
 	FontLibrary getFontLibrary(Fonts font, int size) {
-		fontSources[font][size];
+		return fontSources[font][size];
 	}
 };
 
@@ -310,6 +314,12 @@ public:
 		this->acceleration = acceleration;
 		unlock();
 	}
+
+	void setText(string text) {
+		lock();
+		this->text = text;
+		unlock();
+	}
 	
 	void update() {
 		lock();
@@ -336,12 +346,13 @@ public:
 		int lengthOfString = 0;
 		if not(textWrapeLength) {
 			for (auto c : text) {
-				lengthOfString += lib.characterWidth[CHAR2FONTINDEX(c)];
+				lengthOfString += lib.characterWidth[CHAR2FONTINDEX(c)] + spacing;
 			}
 		}
 		else {
 			//TODO Wrap text look up too
 		}
+		cout << size << endl;
 
 		//Switch for top y position
 		switch (alignment) {
@@ -357,7 +368,7 @@ public:
 			textPos.y = (int)position.y + (int)size;
 			break;
 		}
-		textPos.h = size;
+		textPos.h = lib.realHeight;
 
 		//Switch for x position
 		switch (alignment) {
@@ -447,14 +458,25 @@ public:
 	void addTextEnt(string identifier, string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment = midMid,
 		bool outline = false, CUS_Polar velocity = { 0,0 }, CUS_Polar acceleration = { 0,0 },
 		int cycles = -1, float alpha = 255, float alphaVelocity = 0) {
+		renderLock.lock();
+		updateLock.lock();
+
 		if (textEntityList.count(identifier)) {
 			err::logMessage("WARNING: A text ent was added when it already existed, existing ent changed instead");
 		}
 
-		auto textEnt = new TextEntityA(text, position, size, font, color, alignment, cycles, outline);
-		textEnt->setMovement(velocity.toPoint(), acceleration.toPoint());
-		textEnt->setAlphaEx(alpha, alphaVelocity);
-		textEntityList[identifier] = make_unique<TextEntityA>(textEnt);
+		textEntityList[identifier] = make_unique<TextEntityA>(text, position, size, font, color, alignment, cycles, outline);
+		textEntityList[identifier]->setMovement(velocity.toPoint(), acceleration.toPoint());
+		textEntityList[identifier]->setAlphaEx(alpha, alphaVelocity);
+
+		renderLock.unlock();
+		updateLock.unlock();
+	}
+
+	void updateTextByKey(string identifier, string newText) {
+		renderLock.lock();
+		textEntityList[identifier]->setText(newText);
+		renderLock.unlock();
 	}
 };
 
