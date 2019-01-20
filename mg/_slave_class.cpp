@@ -105,8 +105,6 @@ void SlaveInstance::loadCommandList() {
 }
 
 void SlaveInstance::updateConsoleView(bool push) {
-	consoleContainer->lock();
-
 	string newLine;
 	newLine.append(": ");
 	if (!push) {
@@ -121,12 +119,10 @@ void SlaveInstance::updateConsoleView(bool push) {
 		consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES-1].append(currentConsoleLine);
 	}
 
-	consoleContainer->updateTextByKey("current", newLine);
+	consoleTextMaster->updateTextByKey("current", newLine);
 	for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES; i++) {
-		consoleContainer->updateTextByKey(to_string(i), consoleBuffer[i]);
+		consoleTextMaster->updateTextByKey(to_string(i), consoleBuffer[i]);
 	}
-
-	consoleContainer->unlock();
 }
 
 void SlaveInstance::consoleUpdate() {
@@ -202,8 +198,6 @@ void SlaveInstance::computer() {
 	chrono::high_resolution_clock::time_point currentCyclePoint;
 	while (!endSlave) {
 		startCyclePoint = chrono::high_resolution_clock::now();
-		
-		fpsContainer->updateAllTextEnts();
 
 		cycle++;
 		err::setLoggingCycle(cycle);
@@ -247,8 +241,8 @@ void SlaveInstance::computer() {
 		cout << "waitingForRenderer" << endl;
 	}
 	memFree();
-	delete fpsContainer;
-	delete consoleContainer;
+	delete fpsTextMaster;
+	delete consoleTextMaster;
 	
 	computerActive = false;
 }
@@ -275,53 +269,52 @@ void SlaveInstance::renderer() {
 				} while (i < (unsigned int)frameLimit);
 			}
 
-			currentCyclePoint = chrono::high_resolution_clock::now();
-			
+			//draw fps shit before its time to calculate time
 			//handle fps counter, every 1000 cycles
 			if (graphicsState->getShowFPS()) {
-				if (pushFPS) {
-					fps = (float) 1e9 / ((chrono::duration_cast<std::chrono::nanoseconds>(currentCyclePoint - startCyclePoint)).count());
-					FPSVector.push_back(fps);
-					pushFPS = false;
-					if (FPSVector.size() >= 20) {
-						float average = 0;
-						for (float i : FPSVector) 
-							average += i;
+				if (FPSVector.size() >= 20) {
+					int temp = 0;
+					for (int i : FPSVector) 
+						temp += i;
 
-						average = (average / FPSVector.size());
+					float average = ((float)temp / FPSVector.size());
+					average = F(1e6) / average;
 						
-						fpsContainer->lock();
-						fpsContainer->updateTextByKey("fps", "fps: " + to_string((int)average));
-						fpsContainer->updateTextByKey("dropped", "drop: " + to_string((3333 * cyclesPerDraw * 100) / ((float)cycleDrawCounter)) + "%");
-						fpsContainer->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
-						fpsContainer->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at "+ to_string(particleLoad) + "%");
-						fpsContainer->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
-						fpsContainer->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
-						fpsContainer->unlock();
-						cycleDrawCounter = 0;
-						cyclesPerDraw = 0;
-						FPSVector.clear();
-					}
+					fpsTextMaster->updateTextByKey("fps", "fps: " + to_string((int)average));
+					fpsTextMaster->updateTextByKey("dropped", "drop: " + to_string((3333 * cyclesPerDraw * 100) / ((float)cycleDrawCounter)) + "%");
+					fpsTextMaster->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
+					fpsTextMaster->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at " + to_string(particleLoad) + "%");
+					fpsTextMaster->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
+					fpsTextMaster->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
+					cycleDrawCounter = 0;
+					cyclesPerDraw = 0;
+					FPSVector.clear();
 				}
 			}
 			else {
-				fpsContainer->lock();
-				fpsContainer->updateTextByKey("fps", " ");
-				fpsContainer->updateTextByKey("dropped", " ");
-				fpsContainer->updateTextByKey("boxes", " ");
-				fpsContainer->updateTextByKey("particle", " ");
-				fpsContainer->updateTextByKey("cycle", " ");
-				fpsContainer->updateTextByKey("weather", " ");
-				fpsContainer->unlock();
+				fpsTextMaster->updateTextByKey("dropped", " ");
+				fpsTextMaster->updateTextByKey("fps", " ");
+				fpsTextMaster->updateTextByKey("boxes", " ");
+				fpsTextMaster->updateTextByKey("particle", " ");
+				fpsTextMaster->updateTextByKey("cycle", " ");
+				fpsTextMaster->updateTextByKey("weather", " ");
 			}
-			fpsContainer->lock();
-			fpsContainer->renderText(0);
-			fpsContainer->unlock();
+
+			fpsTextMaster->renderText(0);
+
 			if (inConsole) {
-				consoleContainer->lock();
-				consoleContainer->renderText(0);
-				consoleContainer->unlock();
+				consoleTextMaster->renderText(0);
 			}
+
+			currentCyclePoint = chrono::high_resolution_clock::now();
+
+			if (graphicsState->getShowFPS()) {
+				if (pushFPS) {
+					FPSVector.push_back( (int)((chrono::duration_cast<std::chrono::microseconds>(currentCyclePoint - startCyclePoint)).count()) );
+					pushFPS = false;
+				}
+			}
+			
 		}
 		graphicsState->renderFrame();
 	}
@@ -368,32 +361,20 @@ void SlaveInstance::initialiseInstance(GraphicsState* graphicsState, TextRendere
 
 	totalWindSum.store({ 0,0 });
 
-	fpsContainer = new TextContainer(textRenderer);
-	fpsContainer->newTextEnt("dropped", " ", { (float)5, (float)5 }, sans28, white, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	fpsContainer->newTextEnt("fps", " ", { (float)5, (float)33 }, sans28, white, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	fpsContainer->newTextEnt("boxes", " ", { (float)5, (float)61 }, sans28, white, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	fpsContainer->newTextEnt("particle", " ", { (float)5, (float)89 }, sans28, white, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	fpsContainer->newTextEnt("cycle", " ", { (float)5, (float)117 }, sans28, white, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	fpsContainer->newTextEnt("weather", " ", { (float)5, (float)145 }, sans28, white, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
+	fpsTextMaster = new TextMaster(textGlobalMaster);
+	fpsTextMaster->addTextEnt("dropped", " ", { (float)10, (float)904 }, 28, sansFontStyle, whiteFontColor, topLeft);
+	fpsTextMaster->addTextEnt("fps", " ", { (float)10, (float)932 }, 28, sansFontStyle, whiteFontColor, topLeft);
+	fpsTextMaster->addTextEnt("boxes", " ", { (float)10, (float)960 }, 28, sansFontStyle, whiteFontColor, topLeft);
+	fpsTextMaster->addTextEnt("particle", " ", { (float)10, (float)988 }, 28, sansFontStyle, whiteFontColor, topLeft);
+	fpsTextMaster->addTextEnt("cycle", " ", { (float)10, (float)1016 }, 28, sansFontStyle, whiteFontColor, topLeft);
+	fpsTextMaster->addTextEnt("weather", " ", { (float)10, (float)1044 }, 28, sansFontStyle, whiteFontColor, topLeft);
 
-
-	consoleContainer = new TextContainer(textRenderer);
-	float ypos = 5;
-	for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES; i++) {
-		consoleContainer->newTextEnt(to_string(i), " ", { (float)1140, (float)ypos+35*i }, sans32, gold, topRight, false,
-			{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
-	}
-	consoleContainer->newTextEnt("current", ": ", { (float)640, (float)NUMBER_OF_CONSOLE_MESSAGES*35 + 5 }, sans32, red, topLeft, false,
-		{ 0, 0 }, { 0, 0 }, 2147480000, (float)254, 0);
 
 	consoleTextMaster = new TextMaster(textGlobalMaster);
-
+	for (int i = 0; i < NUMBER_OF_CONSOLE_MESSAGES; i++) {
+		consoleTextMaster->addTextEnt(to_string(i), " ", { (float)1170, (float)5 + 35 * i }, 28, sansFontStyle, redFontColor, topRight);
+	}
+	consoleTextMaster->addTextEnt("current", ": ", { (float)640, (float)NUMBER_OF_CONSOLE_MESSAGES * 35 + 5 }, 28, sansFontStyle, goldFontColor, topLeft);
 
 }
 

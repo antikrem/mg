@@ -54,9 +54,9 @@ protected:
 
 	//FPS report draw variables
 	float fps = 0;
-	vector<float> FPSVector;
+	vector<int> FPSVector;
 	atomic<bool> pushFPS = false;
-	TextContainer* fpsContainer = NULL;
+	TextMaster* fpsTextMaster = NULL;
 
 	//Cycle report draw variables
 	atomic<int> cycleDrawCounter = 0;
@@ -86,9 +86,8 @@ protected:
 	int consoleCounter = 0;
 	int eraseCounter = 20;
 	char nextIn = (char)0;
-	string consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES] = { " ", " ", " ", " ", " " } ;
+	string consoleBuffer[NUMBER_OF_CONSOLE_MESSAGES];
 	string currentConsoleLine;
-	TextContainer* consoleContainer = NULL;
 	TextMaster* consoleTextMaster = NULL;
 
 	/*Updates console view, feed bool to push history*/

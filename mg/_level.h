@@ -96,7 +96,7 @@ private:
 
 	//Text container for floating text
 	mutex floatTextLock;
-	TextContainer* floatText;
+	TextMaster* floatTextMaster;
 
 	//Overlay Texture
 	SDL_Texture* overlay;
@@ -299,7 +299,7 @@ private:
 		particleMaster->addForceApplier(player->particulate(true) );
 
 		//Initialise float text container
-		floatText = new TextContainer(textRenderer);
+		floatTextMaster = new TextMaster(textGlobalMaster);
 
 		//Load overlay
 		SDL_Surface* overlaySurf = IMG_Load("assets//UI//overlay.png");
@@ -507,8 +507,8 @@ private:
 				CUS_Point tempPowerPos = i->getPosition();
 				CUS_Point tempRandPowerPos = { 70 * random::randomFloat() * random::sign(), 70 * random::randomFloat() * random::sign() };
 				CUS_Point shiftPowerup = { 220, 10 };
-				floatText->newTextEnt(random::randomString(), to_string(i->getPoints()), tempPowerPos + tempRandPowerPos + shiftPowerup, sans22, white, midMid, true,
-					{ (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.135);
+				floatTextMaster->addTextEnt("", to_string(i->getPoints()), tempPowerPos + tempRandPowerPos + shiftPowerup, 22, sansFontStyle, whiteFontColor, midMid, 0,
+					false, { (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.105);
 			}
 		}
 		powerUps.unlock();
@@ -560,9 +560,7 @@ private:
 		stuckCounter = dialogue->updateDialogue(counter, getInput());
 
 		//update float text
-		floatText->lock();
-		floatText->updateAllTextEnts();
-		floatText->unlock();
+		floatTextMaster->updateAllTextEnts();
 
 		//Clear dead anonEnts from anonEnt master list
 		anonEnts.cleanDeathFlags();
@@ -681,10 +679,7 @@ private:
 		//Draw particles
 		particleMaster->renderParticles(shift);
 
-		//Draw float text
-		floatText->lock();
-		floatText->renderText(shift);
-		floatText->unlock();
+		floatTextMaster->renderText(shift);
 
 		//Draw weather above
 		weatherMasterLock.lock();

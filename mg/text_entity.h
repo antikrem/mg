@@ -231,7 +231,6 @@ public:
 	TextGlobalMaster(GraphicsState* gState) {
 		this->gState = gState;
 		this->gRenderer = gState->getGRenderer();
-		cout << FONTINDEXSIZE << endl;
 
 		//colors
 		colors[whiteFontColor] = { 255, 255, 255 };
@@ -241,6 +240,8 @@ public:
 
 		loadAFont(sansFontStyle, 36, "Sans");
 		loadAFont(sansFontStyle, 32, "Sans");
+		loadAFont(sansFontStyle, 28, "Sans");
+		loadAFont(sansFontStyle, 22, "Sans");
 	}
 
 	~TextGlobalMaster() {
@@ -273,9 +274,6 @@ class TextEntityA : public ThreadSafe, public ListedEntity {
 	int internalCounter = 0;
 	int cycles = -1;
 
-	//Counts up from zero when allocating no reference objects
-	int allocator = 0;
-
 	bool outline = false;
 
 	string text;
@@ -283,14 +281,14 @@ class TextEntityA : public ThreadSafe, public ListedEntity {
 	int size;
 	Fonts font;
 	FontColors color;
-	int spacing = 2;
+	int spacing = 0;
 
 	int textWrapeLength = 0;
 
 	float alphaVelocity = 0;
 
 public:
-	TextEntityA(string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment, int cycles, bool outline) {
+	TextEntityA(string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment, int cycles, int spacing, bool outline) {
 		this->text = text;
 		this->position = position;
 		this->size = size;
@@ -298,6 +296,7 @@ public:
 		this->color = color;
 		this->alignment = alignment;
 		this->cycles = cycles;
+		this->spacing = spacing;
 		this->outline = outline;
 	}
 
@@ -352,7 +351,6 @@ public:
 		else {
 			//TODO Wrap text look up too
 		}
-		cout << size << endl;
 
 		//Switch for top y position
 		switch (alignment) {
@@ -378,21 +376,29 @@ public:
 			textPos.x = (int)position.x;
 			break;
 		case midMid:
-			textPos.y = (int)position.y + (int)(lengthOfString / 2);
+			textPos.x = (int)position.x + (int)(lengthOfString / 2);
 			break;
 		case topRight:
-			textPos.y = (int)position.y - (int)lengthOfString;
+			textPos.x = (int)position.x - (int)lengthOfString;
 			break;
 		}
+		textPos.x += shift;
 
 		//Begin drawing
 		for (auto c : text) {
 			textPos.w = lib.characterWidth[CHAR2FONTINDEX(c)];
 			auto texture = outline ? lib.boldTextureList[CHAR2FONTINDEX(c)][color] : lib.baseTextureList[CHAR2FONTINDEX(c)][color];
-			SDL_RenderCopyEx(textGlobalMaster->getRenderer(), texture, NULL, &textPos, 0, NULL, SDL_FLIP_NONE);
+			if (alpha > 250) {
+				SDL_RenderCopyEx(textGlobalMaster->getRenderer(), texture, NULL, &textPos, 0, NULL, SDL_FLIP_NONE);
+			}
+			else if (alpha > 0) {
+				SDL_SetTextureAlphaMod(texture, (Uint8)alpha);
+				SDL_RenderCopyEx(textGlobalMaster->getRenderer(), texture, NULL, &textPos, 0, NULL, SDL_FLIP_NONE);
+				SDL_SetTextureAlphaMod(texture, 255);
+			}
+			
 			textPos.x += textPos.w + spacing;
 		}
-
 		unlock();
 	}
 
@@ -410,8 +416,10 @@ class TextMaster {
 	map< string, unique_ptr<TextEntityA> > textEntityList;
 
 	//Changing textEntityList size requires both locks to be engaged
-	mutex renderLock;
-	mutex updateLock;
+	mutex lock;
+
+		//Counts up from zero when allocating no reference objects
+	int allocator = 0;
 
 	TextGlobalMaster* textGlobalMaster = NULL;
 	SDL_Renderer* RENDERER = NULL;
@@ -427,13 +435,11 @@ public:
 	}
 
 	void updateAllTextEnts() {
-		updateLock.lock();
+		lock.lock();
 		for (auto const& i : textEntityList) {
 			i.second->update();
-
 		}
 
-		renderLock.lock();
 		for (std::map<string, unique_ptr<TextEntityA>>::iterator it = textEntityList.begin(); it != textEntityList.end();) {
 			if (!(it->second->getFlag())) {
 				it = textEntityList.erase(it);
@@ -442,41 +448,45 @@ public:
 				it++;
 			}
 		}
-		renderLock.unlock();
-		updateLock.unlock();
+		lock.unlock();
+		
 	}
 
-	void renderText(int shift) {
-		renderLock.lock();
+	void renderText(int shift, int check = false) {
+		lock.lock();
 		for (auto const& i : textEntityList) {
 			i.second->render(shift, textGlobalMaster);
 		}
-		renderLock.unlock();
+		lock.unlock();
 	}
 
 	//Use an empty string to 
-	void addTextEnt(string identifier, string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment = midMid,
-		bool outline = false, CUS_Polar velocity = { 0,0 }, CUS_Polar acceleration = { 0,0 },
+	void addTextEnt(string identifier, string text, CUS_Point position, int size, Fonts font, FontColors color, Alignment alignment = midMid, 
+		int spacing = 0, bool outline = false, CUS_Polar velocity = { 0,0 }, CUS_Polar acceleration = { 0,0 },
 		int cycles = -1, float alpha = 255, float alphaVelocity = 0) {
-		renderLock.lock();
-		updateLock.lock();
+		lock.lock();
+
+		string newIdentifier = identifier;
+		if (newIdentifier == "") {
+			newIdentifier = to_string(++allocator);
+		}
 
 		if (textEntityList.count(identifier)) {
 			err::logMessage("WARNING: A text ent was added when it already existed, existing ent changed instead");
 		}
+		
 
-		textEntityList[identifier] = make_unique<TextEntityA>(text, position, size, font, color, alignment, cycles, outline);
-		textEntityList[identifier]->setMovement(velocity.toPoint(), acceleration.toPoint());
-		textEntityList[identifier]->setAlphaEx(alpha, alphaVelocity);
+		textEntityList[newIdentifier] = make_unique<TextEntityA>(text, position, size, font, color, alignment, cycles, spacing, outline);
+		textEntityList[newIdentifier]->setMovement(velocity.toPoint(), acceleration.toPoint());
+		textEntityList[newIdentifier]->setAlphaEx(alpha, alphaVelocity);
 
-		renderLock.unlock();
-		updateLock.unlock();
+		lock.unlock();
 	}
 
 	void updateTextByKey(string identifier, string newText) {
-		renderLock.lock();
+		lock.lock();
 		textEntityList[identifier]->setText(newText);
-		renderLock.unlock();
+		lock.unlock();
 	}
 };
 

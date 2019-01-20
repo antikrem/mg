@@ -236,6 +236,7 @@ bool checkMusic(string name) {
 
 void sound_end() {
 	Mix_HaltChannel(-1);
+	stopAllSoundChannels();
 	Mix_HaltMusic();
 	for (auto i : soundList) {
 		Mix_FreeChunk(i.second.data.sound);

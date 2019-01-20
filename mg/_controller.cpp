@@ -147,7 +147,7 @@ int main(int argc, char* args[]) {
 	
 	err::endLog();
 
-//	sound_end();
+	sound_end();
 	SDL_Quit();
 	TTF_Quit();
 
