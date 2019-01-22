@@ -95,6 +95,10 @@ public:
 		}
 	}
 
+	void setOnRails() {
+		onRails = true;
+	}
+
 	int getPoints() {
 		return internalPoints;
 	}

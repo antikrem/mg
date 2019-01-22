@@ -106,8 +106,10 @@ public:
 		updateBox();
 	}
 
-	void update(CUS_Point playerPosition) {
-		updateMovement(playerPosition, NULL);
+	CUS_Point update(CUS_Point playerPosition) {
+		auto ret =  updateMovement(playerPosition, NULL);
+		updateBox();
+		return ret;
 	}
 
 };
@@ -124,11 +126,14 @@ private:
 	int inbetweenDelay = 0;
 	BulletTemplate* bulletTemplate = NULL;
 
+
+
 public:
 
-	BulletSpawner(BulletSpawnerTemplate* bulletSpawnerTemplate) {
+	BulletSpawner(BulletSpawnerTemplate* bulletSpawnerTemplate, CUS_Point masterPosition) {
 		internalCounter = -(bulletSpawnerTemplate->initialDelay);
-		position = bulletSpawnerTemplate->initialPosition;
+		addFirstMaster( masterPosition);
+		position = bulletSpawnerTemplate->initialPosition + lastMaster;
 		velocity = bulletSpawnerTemplate->initialVelocity;
 		bulletTemplate = bulletSpawnerTemplate->bulletTemplate;
 		inbetweenDelay = bulletSpawnerTemplate->inbetweenDelay;
@@ -178,11 +183,11 @@ private:
 	SharedEntityList<Bullet> bulletList;
 public:
 
-	BulletMaster(BulletMasterTemplate* bulletMasterTemplate) {
+	BulletMaster(BulletMasterTemplate* bulletMasterTemplate, CUS_Point enemyPosition) {
 		this->name = bulletMasterTemplate->name;
 
 		for (auto spawnerTemplate : bulletMasterTemplate->bulletSpawnerTemplates) {
-			bulletSpawners.push_back(new BulletSpawner(spawnerTemplate));
+			bulletSpawners.push_back(new BulletSpawner(spawnerTemplate, enemyPosition));
 		}
 	}
 

@@ -58,6 +58,8 @@ protected:
 public:
 	void setAnimationSet(AnimationAssignment* animation_map_param);
 
+	CUS_Point getPosition();
+
 	SDL_Rect getRenderSize();
 
 	SDL_Texture* getCurrentShadowFrame();

@@ -29,3 +29,22 @@ bool str_kit::isADigit(string line) {
 	}
 	return true;
 }
+#include <iostream>
+
+string str_kit::convertToScoreString(float value, bool whole) {
+	string score;
+	string source = to_string(value);
+	string wholeNumber = source.substr(0, source.find('.'));
+	if (wholeNumber.length() > 1)
+		score.append(wholeNumber);
+	else {
+		score.append("0");
+		score.append(wholeNumber);
+	}
+	if (whole)
+		return score+"%";
+	score.append(".");
+	score.append( source.substr(source.find('.')+1, 2) );
+	return score + "%";
+
+}

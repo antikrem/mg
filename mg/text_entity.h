@@ -18,10 +18,14 @@
 
 enum Alignment {
 	topLeft,
+	topMid,
+	topRight,
 	midLeft,
 	midMid,
-	topRight,
-	bottomLeft
+	midRight,
+	bottomLeft,
+	bottomMid,
+	bottomRight
 };
 
 enum Font {
@@ -242,6 +246,7 @@ public:
 		colors[blackFontColor] = { 0,0,0 };
 		colors[goldFontColor] = { 255,215,0,255 };
 
+		loadAFont(sansFontStyle, 56, "Sans");
 		loadAFont(sansFontStyle, 36, "Sans");
 		loadAFont(sansFontStyle, 32, "Sans");
 		loadAFont(sansFontStyle, 28, "Sans");
@@ -368,15 +373,19 @@ public:
 		int temp = outline ? lib.realHeightBold : lib.realHeight;
 		switch (alignment) {
 		case topLeft:
+		case topMid:
 		case topRight:
 			textPos.y = (int)position.y;
 			break;
 		case midLeft:
 		case midMid:
-			textPos.y = (int)position.y + (int)(temp /2);
+		case midRight:
+			textPos.y = (int)position.y - (int)(temp /2);
 			break;
 		case bottomLeft:
-			textPos.y = (int)position.y + (int)temp;
+		case bottomMid:
+		case bottomRight:
+			textPos.y = (int)position.y - (int)temp;
 			break;
 		}
 		textPos.h = temp;
@@ -388,10 +397,14 @@ public:
 		case bottomLeft:
 			textPos.x = (int)position.x;
 			break;
+		case topMid:
 		case midMid:
-			textPos.x = (int)position.x + (int)(lengthOfString / 2);
+		case bottomMid:
+			textPos.x = (int)position.x - (int)(lengthOfString / 2);
 			break;
 		case topRight:
+		case midRight:
+		case bottomRight:
 			textPos.x = (int)position.x - (int)lengthOfString;
 			break;
 		}

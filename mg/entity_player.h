@@ -29,13 +29,13 @@ To be used only in _level.h*/
 #define RAGE_RESET 720
 #define BASE_POWER_BUILD 10
 #define MAX_POWER 100
-#define POWER_DRAIN F(0.2)
-#define POWER_DRAIN_SHIFT F(0.1)
+#define POWER_DRAIN F(0.007)
+#define POWER_DRAIN_SHIFT F(0.0005)
 
 static float edgeHitPower(float currentPower, float rage) {
-	float temp = BASE_POWER_BUILD * (1 - (currentPower / MAX_POWER)) * (1 / (5*(rage/ MAX_RAGE)+1));
-	if ((currentPower + temp) > 100)
-		temp = 100 - currentPower;
+	float temp = BASE_POWER_BUILD * (1 - (currentPower / MAX_POWER)) * (1 / (3*(rage/ MAX_RAGE)+1));
+	if ((currentPower + temp) > 120)
+		temp = 120 - currentPower;
 	temp = (temp > 0 ? temp : 0);
 	return temp;
 }
@@ -72,6 +72,7 @@ protected:
 	float rage = 0;
 	float delay = 0;
 	Pos lastEdge = noPos;
+	bool rageResetFlag = false;
 
 
 	void cleanBulletTable() {
@@ -198,10 +199,8 @@ public:
 			//If not shifted, check mechanics
 			else {
 				if ((position.y < (WORK_SPACE_Y - RAGE_RESET)) && (rage>1) ) {
-					targetable = false;
-					targetableCounter = (int)rage;
 					rage = 0;
-					cout << "RAGE_RESET" << endl;
+					rageResetFlag = true;
 				} 
 				else if (position.x < SAFESPACE) {
 					if (lastEdge == noPos || lastEdge == rightPos) {
@@ -210,8 +209,6 @@ public:
 						if (rage < MAX_RAGE) {
 							rage += RAGE_BUILD;
 						}
-						cout << rage << endl;
-						cout << power << endl;
 					}
 				}
 				else if (position.x > (WORK_SPACE_X - SAFESPACE) ) {
@@ -221,8 +218,6 @@ public:
 						if (rage < MAX_RAGE) {
 							rage += RAGE_BUILD;
 						}
-						cout << rage << endl;
-						cout << power << endl;
 					}
 				}
 
@@ -254,6 +249,18 @@ public:
 
 	float getRage() {
 		return rage;
+	}
+
+	float getPower() {
+		return power > 0 ? power  : 0;
+	}
+
+	bool getRageResetFlag() {
+		if (rageResetFlag) {
+			rageResetFlag = false;
+			return true;
+		}
+		return false;
 	}
 
 	virtual void prepareBulletTable() {

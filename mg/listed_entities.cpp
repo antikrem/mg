@@ -22,10 +22,6 @@ bool ListedEntity::getFlag() {
 	return flag;
 }
 
-CUS_Point ListedEntity::getPosition() {
-	return position;
-}
-
 void ListedEntity::updateForceApplier() {
 	if (forceApplier) {
 		forceApplier->updatePositionAndVelocity(position, velocity);

@@ -95,8 +95,10 @@ private:
 	SharedEntityList<PowerUp> powerUps;
 
 	//Text container for floating text
-	mutex floatTextLock;
 	TextMaster* floatTextMaster;
+
+	//Text container for UI elements 
+	TextMaster* uiTextMaster;
 
 	//Overlay Texture
 	SDL_Texture* overlay;
@@ -300,6 +302,9 @@ private:
 
 		//Initialise float text container
 		floatTextMaster = new TextMaster(textGlobalMaster);
+		uiTextMaster = new TextMaster(textGlobalMaster);
+		uiTextMaster->addTextEnt("power", "00.00%", { 1409, 595 }, 56, sansFontStyle, whiteFontColor, midMid, 0, true);
+		uiTextMaster->addTextEnt("rage", "00.00%", { 1699, 595 }, 56, sansFontStyle, whiteFontColor, midMid, 0, true);
 
 		//Load overlay
 		SDL_Surface* overlaySurf = IMG_Load("assets//UI//overlay.png");
@@ -450,6 +455,17 @@ private:
 		//update player
 		player->lock();
 		player->playerUpdate(getInput(), shift);
+		if (player->getRageResetFlag()) {
+			floatTextMaster->addTextEnt("", "RAGE RESET", player->getPosition(), 22, sansFontStyle, whiteFontColor, midMid, 0,
+				true, { (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.108);
+			powerUps.lock();
+			for (auto i : powerUps.getEntList()) {
+				if (i->getUpgradeType() == life) {
+					i->setOnRails();
+				}
+			}
+			powerUps.unlock();
+		}
 		player->unlock();
 
 		//Pull enemies
@@ -495,7 +511,14 @@ private:
 		
 		totalBulletList.lock();
 		for (auto i : totalBulletList.getEntList()) {
-			i->update(player->getPosition());
+			auto check = i->update(player->getPosition());
+			//Do a quick quick check first for collision
+			if (quickCheckTwoPointsDistance(i->getPosition(), player->getPosition(), i->getHitBox() + player->getHitBox())) {
+				if (i->getPosition().getDistanceToPoint(player->getPosition()) < (i->getHitBox() + player->getHitBox())) {
+					1;
+				}
+			}
+			
 		}
 		totalBulletList.unlock();
 		totalBulletList.pushToRenderBuffer();
@@ -506,13 +529,13 @@ private:
 			if ( i->updatePosition(player->getPosition()) ) {
 				CUS_Point tempPowerPos = i->getPosition();
 				CUS_Point tempRandPowerPos = { 70 * random::randomFloat() * random::sign(), 70 * random::randomFloat() * random::sign() };
-				CUS_Point shiftPowerup = { 220, 10 };
-				floatTextMaster->addTextEnt("", to_string(i->getPoints()), tempPowerPos + tempRandPowerPos + shiftPowerup, 22, sansFontStyle, whiteFontColor, midMid, 0,
+				floatTextMaster->addTextEnt("", to_string(i->getPoints()), tempPowerPos + tempRandPowerPos, 22, sansFontStyle, whiteFontColor, midMid, 0,
 					true, { (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.108);
 			}
 		}
 		powerUps.unlock();
 		powerUps.cleanDeathFlags();
+		powerUps.pushToRenderBuffer();
 
 		//update player bullet list
 		playerBullets.lock();
@@ -561,6 +584,10 @@ private:
 
 		//update float text
 		floatTextMaster->updateAllTextEnts();
+
+		//update ui text
+		uiTextMaster->updateTextByKey("power", str_kit::convertToScoreString(player->getPower(), false));
+		uiTextMaster->updateTextByKey("rage", str_kit::convertToScoreString(player->getRage(), false));
 
 		//Clear dead anonEnts from anonEnt master list
 		anonEnts.cleanDeathFlags();
@@ -636,11 +663,7 @@ private:
 		boxCountRunningTotal += playerBullets.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 
 		//Draw powerups
-		powerUps.lock();
-		for (auto i : powerUps.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
-		}
-		powerUps.unlock();
+		boxCountRunningTotal += powerUps.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 
 		//Draw anon ents above player bullets
 		anonEnts.lock();
@@ -664,7 +687,7 @@ private:
 
 		//Draw enemy bullets
 		boxCountRunningTotal += totalBulletList.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
-
+		
 		//Draw Enemies
 		enemyEntities.lock();
 		for (auto i : enemyEntities.getEntList()) {
@@ -679,7 +702,8 @@ private:
 		//Draw particles
 		particleMaster->renderParticles(shift);
 
-		floatTextMaster->renderText(shift);
+		//Draw float text
+		floatTextMaster->renderText(shift + 220);
 
 		//Draw weather above
 		weatherMasterLock.lock();
@@ -692,6 +716,9 @@ private:
 
 		//Draw overlay
 		SDL_RenderCopy(graphicsState->getGRenderer(), overlay, NULL, NULL);
+
+		//draw ui text
+		uiTextMaster->renderText(0);
 
 		//Draw dialogue
 		dialogue->drawDialogue();

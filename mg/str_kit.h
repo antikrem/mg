@@ -15,6 +15,9 @@ namespace str_kit {
 
 	/*checks if the string is a digit*/
 	bool isADigit(string line);
+
+	/*Takes a float and formats it to score string: XX.XX% or XXX.XX%*/
+	string convertToScoreString(float value, bool whole);
 }
 
 #endif

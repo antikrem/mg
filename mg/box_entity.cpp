@@ -90,6 +90,10 @@ void BoxEntity::setAnimationSet(AnimationAssignment* animation_map_param) {
 	backupFrameType = idle;
 }
 
+CUS_Point BoxEntity::getPosition() {
+	return position;
+}
+
 SDL_Rect BoxEntity::getRenderSize() {
 	return visibleBound_Entity;
 }

@@ -69,7 +69,7 @@ public:
 		//Check bullets
 		if (bmtName != "") {
 			if (bmtDelay == internalCycle) {
-				bulletMaster = make_unique<BulletMaster>( (*bmtList)[bmtName] );
+				bulletMaster = make_unique<BulletMaster>( (*bmtList)[bmtName], position );
 				cout << "caught" << endl;
 			}
 		}

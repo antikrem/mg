@@ -33,8 +33,6 @@ public:
 
 	bool getFlag();
 
-	CUS_Point getPosition();
-
 	/*Generally, should be called every cycle for every listed entity
 	If it has not been particulated, nothing will happen*/
 	void updateForceApplier();

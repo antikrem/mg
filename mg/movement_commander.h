@@ -38,21 +38,27 @@ class MovementCommander : public ListedEntity {
 protected:
 	int internalMovementCycle = -1;
 
-	CUS_Point temporaryPosition = { 0,0 };
+	//Position of the first master
+	CUS_Point lastMaster = { 0,0 };
 
 	map <int, MovementCommand> upcomingUpdates;
 	MovementCommand currentUpdate = { true, false, false, 0, true, false, 0 };
 
 public:
+	void addFirstMaster(CUS_Point firstMaster) {
+		this->lastMaster = firstMaster;
+	}
+
 	void addMovementCommand(int startingFrame, MovementCommand currentUpdate) {
 		upcomingUpdates[startingFrame] = currentUpdate;
 	}
 
-	void updateStartingPosition(CUS_Point temporaryPosition) {
-		this->temporaryPosition = temporaryPosition;
+	void updateStartingPosition(CUS_Point position) {
+		this->position = position;
 	}
 
-	void updateMovement(CUS_Point playerPosition, CUS_Point* masterPosition) {
+	//updates and returns new position
+	CUS_Point updateMovement(CUS_Point playerPosition, CUS_Point* masterPosition) {
 		internalMovementCycle++;
 
 		if (upcomingUpdates.count(internalMovementCycle)) {
@@ -109,12 +115,14 @@ public:
 		
 
 		velocity = toPoint(tempVelocity);
-		temporaryPosition += velocity;
+		position += velocity;
 
-		if (masterPosition)
-			position = temporaryPosition + *masterPosition;
-		else
-			position = temporaryPosition;
+		if (masterPosition) {
+			position = position - lastMaster;
+			position += *masterPosition;
+			lastMaster = *masterPosition;
+		}
+		return position;
 	}
 };
 

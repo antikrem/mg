@@ -50,8 +50,7 @@ private:
 	void updateText() {
 		SDL_Surface* textSurf = TTF_RenderText_Blended_Wrapped((*TEXT_RENDERER).fonts[sans28], textLine.c_str(), (*TEXT_RENDERER).colors[white], 686);
 		textTex = SDL_CreateTextureFromSurface(TEXT_RENDERER->gRenderer, textSurf);
-		if (
-			textSurf)
+		if (textSurf)
 			textRect = { 0, 0, textSurf->w, textSurf->h };
 		SDL_FreeSurface(textSurf);
 	}
