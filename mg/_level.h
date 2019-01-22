@@ -48,6 +48,9 @@ private:
 	float burstChance = F(0.0005);
 	//speed that a normalisation occurs at
 	float burstNormalisation = 0;
+	//shift velocity is an average of 5 cycles of shift
+	float currentShiftVelocity = 0;
+	float cumulativeShift = 0;
 
 	//Shift variables
 	float trueShift = 0;
@@ -385,11 +388,19 @@ private:
 		}
 		else if ( trueShift + SHIFTVELOCITY < para::getShift(player->getPosition()) ) {
 			trueShift += SHIFTVELOCITY;
+			cumulativeShift += SHIFTVELOCITY;
 		}
 		else if ( trueShift - SHIFTVELOCITY > para::getShift(player->getPosition()) ) {
 			trueShift -= SHIFTVELOCITY;
+			cumulativeShift -= SHIFTVELOCITY;
 		}
 		shift = (int)trueShift;
+
+		//Calculate windchange from shift velocity
+		if (cycle % 5 == 0) {
+			currentShiftVelocity = cumulativeShift / 5;
+			cumulativeShift = 0;
+		}
 
 		//Manage windspeed
 		windSpeed = baseWindSpeed + burstWindSpeed;
@@ -446,7 +457,7 @@ private:
 
 		//Update weather
 		weatherMasterLock.lock();
-		weatherEffectManager->update(planeSpeed, windSpeed, lightMaster);
+		weatherEffectManager->update(planeSpeed, windSpeed, lightMaster, currentShiftVelocity);
 		for (int i = 0; i < 3; i++)
 			numberOfWeatherClips[i] = weatherEffectManager->getEffectsCountByIndex(i);
 		weatherToReport = weatherEffectManager->getWeatherType();

@@ -86,7 +86,7 @@ int main(int argc, char* args[]) {
 
 	while (gameState) {
 		//Catch last event, store at evt
-		SDL_PollEvent(&evt);
+ 		SDL_PollEvent(&evt);
 
 		//If there is no level being played, make one
 		if (currentState == NULL) {

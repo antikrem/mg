@@ -169,7 +169,7 @@ public:
 		}
 	}
 
-	void update(float levelScroll, CUS_Polar windspeed, LightMaster* lightMaster) {
+	void update(float levelScroll, CUS_Polar windspeed, LightMaster* lightMaster, float velocityShift) {
 		if (weatherType == noweather)
 			lightMaster->setLightMode(LMNormal);
 		if (weatherType == rain)
@@ -186,6 +186,7 @@ public:
 		vector<WeatherEffect>::iterator it;
 		//FOR ABOVE
 		if (graphicsState->getWeatherVolume() > low) {
+			CUS_Point newPos;
 			for (unsigned int i = 0; i < weatherEffectsAbove.size(); i++) {
 				CUS_Point oldPos = weatherEffectsAbove[i].position;
 				weatherEffectsAbove[i].position.x += ABOVE_SCALE * windspeed.toPoint().x;
@@ -193,7 +194,9 @@ public:
 				weatherEffectsAbove[i].position.y += ABOVE_SCALE * levelScroll;
 				weatherEffectsAbove[i].position.y += ABOVE_SCALE * 10;
 				weatherEffectsAbove[i].position.x += ABOVE_SCALE * weatherEffectsAbove[i].verticalskew;
-				weatherEffectsAbove[i].angle = -1 * weatherEffectsAbove[i].position.getAngleToPoint(oldPos);
+				newPos = weatherEffectsAbove[i].position;
+				newPos.x += ABOVE_SCALE * velocityShift;
+				weatherEffectsAbove[i].angle = -1 * newPos.getAngleToPoint(oldPos);
 			}
 
 			totalDriftAbove += toPoint(windspeed);
@@ -268,6 +271,7 @@ public:
 
 		//FOR MIDDLE
 		if (graphicsState->getWeatherVolume() > medium) {
+			CUS_Point newPos;
 			for (unsigned int i = 0; i < weatherEffectsMiddle.size(); i++) {
 				CUS_Point oldPos = weatherEffectsMiddle[i].position;
 				weatherEffectsMiddle[i].position.x += windspeed.toPoint().x;
@@ -275,7 +279,9 @@ public:
 				weatherEffectsMiddle[i].position.y += levelScroll;
 				weatherEffectsMiddle[i].position.y += 10;
 				weatherEffectsMiddle[i].position.x += weatherEffectsMiddle[i].verticalskew;
-				weatherEffectsMiddle[i].angle = -1 * oldPos.getAngleToPoint(weatherEffectsMiddle[i].position);
+				newPos = weatherEffectsMiddle[i].position;
+				newPos.x += velocityShift;
+				weatherEffectsMiddle[i].angle = -1 * newPos.getAngleToPoint(oldPos);
 			}
 
 			totalDriftMiddle += toPoint(windspeed);
@@ -346,6 +352,7 @@ public:
 
 		//FOR BELOW
 		if (graphicsState->getWeatherVolume() > high) {
+			CUS_Point newPos;
 			for (unsigned int i = 0; i < weatherEffectsBelow.size(); i++) {
 				CUS_Point oldPos = weatherEffectsBelow[i].position;
 				weatherEffectsBelow[i].position.x += BELOW_SCALE * windspeed.toPoint().x;
@@ -353,7 +360,9 @@ public:
 				weatherEffectsBelow[i].position.y += BELOW_SCALE * levelScroll;
 				weatherEffectsBelow[i].position.y += BELOW_SCALE * 10;
 				weatherEffectsBelow[i].position.x += BELOW_SCALE * weatherEffectsBelow[i].verticalskew;
-				weatherEffectsBelow[i].angle = -1 * weatherEffectsBelow[i].position.getAngleToPoint(oldPos);
+				newPos = weatherEffectsBelow[i].position;
+				newPos.x += BELOW_SCALE * velocityShift;
+				weatherEffectsBelow[i].angle = -1 * newPos.getAngleToPoint(oldPos);
 			}
 
 			totalDriftBelow += toPoint(windspeed);
