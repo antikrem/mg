@@ -60,6 +60,7 @@ protected:
 
 	//Cycle report draw variables
 	atomic<int> cycleDrawCounter = 0;
+	atomic<int> cycleLoadDrawCounter = 0;
 	atomic<int> cyclesPerDraw = 0;
 
 	//particle report draw variables

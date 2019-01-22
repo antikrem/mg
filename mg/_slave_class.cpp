@@ -218,6 +218,9 @@ void SlaveInstance::computer() {
 		if not(cycle % 3)
 			pushFPS = true;
 
+		currentCyclePoint = chrono::high_resolution_clock::now();
+		cycleLoadDrawCounter += (unsigned int)(chrono::duration_cast<std::chrono::microseconds>(currentCyclePoint - startCyclePoint)).count();
+
 		unsigned int i;
 		do {
 			currentCyclePoint = chrono::high_resolution_clock::now();
@@ -281,12 +284,13 @@ void SlaveInstance::renderer() {
 					average = F(1e6) / average;
 						
 					fpsTextMaster->updateTextByKey("fps", "fps: " + to_string((int)average));
-					fpsTextMaster->updateTextByKey("dropped", "drop: " + to_string((3333 * cyclesPerDraw * 100) / ((float)cycleDrawCounter)) + "%");
+					fpsTextMaster->updateTextByKey("dropped", "drop: " + str_kit::convertToScoreString((3333 * cyclesPerDraw * 100) / ((float)cycleDrawCounter), false) + " (" + str_kit::convertToScoreString((cycleLoadDrawCounter * 100) / ((float)3333 * cyclesPerDraw), false) +")");
 					fpsTextMaster->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
 					fpsTextMaster->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at " + to_string(particleLoad) + "%");
 					fpsTextMaster->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
 					fpsTextMaster->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
 					cycleDrawCounter = 0;
+					cycleLoadDrawCounter = 0;
 					cyclesPerDraw = 0;
 					FPSVector.clear();
 				}
