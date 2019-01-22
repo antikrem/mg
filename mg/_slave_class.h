@@ -122,9 +122,12 @@ protected:
 	Needs to be overwritten*/
 	virtual void renderCycle();
 
-	/*Takes a command and updates the gamestate
+	/*Level specific commands that are tried after general commands
 	Needs to be over written*/
-	virtual void processCommand(string command, bool fromMaster);
+	virtual void levelProcessCommand(string command, bool fromMaster);
+
+	/*Takes a command and updates the gamestate*/
+	void processCommand(string command, bool fromMaster);
 
 	/*Checks command list,
 	computes if there are commands this cycle*/
