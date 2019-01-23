@@ -63,7 +63,10 @@ void SlaveInstance::processCommand(string command, bool fromMaster) {
 	auto lineVec = str_kit::splitOnToken(command, ' ');
 	if (fromMaster)
 		err::logConsoleMessage("Master has called: [" + command + "]");
-	if (lineVec[0] == "FOV") {
+	if (lineVec[0] == "QUIT") {
+		levelSettingsCurrent->endGame = true;
+	}
+	else if (lineVec[0] == "FOV") {
 		if (lineVec.size() != 2) {
 			if (fromMaster)
 				err::logMessage("FOV was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 1 parameter");
