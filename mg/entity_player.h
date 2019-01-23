@@ -33,8 +33,10 @@ To be used only in _level.h*/
 #define RAGE_RESET 720
 #define BASE_POWER_BUILD 10
 #define MAX_POWER 100
-#define POWER_DRAIN F(0.007)
+#define POWER_DRAIN F(0.0075)
 #define POWER_DRAIN_SHIFT F(0.0005)
+#define GRACED_RAGE_DRAIN F(0.2)
+#define GRACED_RAGE_DRAIN_SHIFT F(0.05)
 
 static float edgeHitPower(float currentPower, float rage) {
 	float temp = BASE_POWER_BUILD * (1 - (currentPower / MAX_POWER)) * (1 / (3*(rage/ MAX_RAGE)+1));
@@ -74,13 +76,15 @@ protected:
 	int targetableCounter = 0;
 	int onRails = 0;
 
-	//Gameplay stuff
+	//Mechanical stuff
 	float power = 0;
 	float rage = 0;
 	float delay = 0;
 	Pos lastEdge = noPos;
 	bool rageResetFlag = false;
-
+	//When rage is reset, gives some i frames for the rest of rage count while draining
+	bool graceFlag = false;
+	
 
 	void cleanBulletTable() {
 		for (int i = 0; i < MAX_BULLETS_PER_PLAYER; i++) {
@@ -213,14 +217,18 @@ public:
 				if (power > 0) {
 					power -= POWER_DRAIN_SHIFT;
 				}
+				//If graced drain slowly
+				if (rage > 0 && graceFlag) {
+					rage -= GRACED_RAGE_DRAIN_SHIFT;
+				}
 			}
 			//If not shifted, check mechanics
 			else {
-				if ((position.y < (WORK_SPACE_Y - RAGE_RESET)) && (rage>1) ) {
-					rage = 0;
+				if ((position.y < (WORK_SPACE_Y - RAGE_RESET)) && (rage>1) && !graceFlag ) {
 					rageResetFlag = true;
+					graceFlag = true;
 				} 
-				else if (position.x < SAFESPACE) {
+				else if (position.x < SAFESPACE && !graceFlag) {
 					if (lastEdge == noPos || lastEdge == rightPos) {
 						lastEdge = leftPos;
 						power += edgeHitPower(power, rage);
@@ -229,7 +237,7 @@ public:
 						}
 					}
 				}
-				else if (position.x > (WORK_SPACE_X - SAFESPACE) ) {
+				else if (position.x > (WORK_SPACE_X - SAFESPACE) && !graceFlag) {
 					if (lastEdge == noPos || lastEdge == leftPos) {
 						lastEdge = rightPos;
 						power += edgeHitPower(power, rage);
@@ -243,8 +251,18 @@ public:
 				if (power > 0) {
 					power -= POWER_DRAIN;
 				}
+				//Drain rage as well if graced
+				if (rage > 0 && graceFlag) {
+					rage -= GRACED_RAGE_DRAIN;
+				}
 			}
-
+			//if graced time to switch
+			if (graceFlag) {
+				if (rage <= 0) {
+					graceFlag = false;
+					rage = 0;
+				}
+			}
 		}
 		else {
 			onRails--;
@@ -252,12 +270,16 @@ public:
 		}
 		updateBox();
 	}
+	
+	//In a graced state, invulnerable
 
 	//Handles the player dying
 	void handleDeath() {
 		targetable = false;
 		targetableCounter = RESPAWN_I_FRAMES;
 		onRails = 270;
+		rage = 0;
+		power = power / 2;
 		position = { (float)(WORK_SPACE_X) / 2, (float)(WORK_SPACE_Y + 500) };
 	}
 
@@ -457,7 +479,6 @@ public:
 			temporarypointspeed = { -310 * turretOffset, 180 - 35 };
 			tempThing = { 19, 180 + 15 - turretOffset * (float) 26.5 };
 			PlayerBullet* temp5 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
-
 
 			bulletTable[1] = temp;
 			bulletTable[2] = temp1;

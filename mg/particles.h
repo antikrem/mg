@@ -19,6 +19,7 @@
 //A particle will be affected by the distance from a force applier
 //The force appplier will slightly repel nearby particles, displacing them based on mass and also velocity and acceleration of applier
 //Distance to particle inversly scale the strength of proximity displacement
+//Angle of displacement will be in the direction of the particle from applier
 //This is the base distance of how far particles are effected
 #define PROXIMITY_DISPLACEMENT F(20)
 //Maximum momentum imparted at centerpoint from proximity displacement
