@@ -192,7 +192,7 @@ void SlaveInstance::loadCommandList() {
 			commandList[stoi(lineVec[0])].push_back(reconstruction);
 		}
 		else {
-			levelProcessCommand(line, true);
+			processCommand(line, true);
 		}
 	}
 }
