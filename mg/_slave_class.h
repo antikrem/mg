@@ -138,10 +138,14 @@ protected:
 	void loadCommandList();
 
 //DRAW FUNCTIONS
-	/*darkness is brightest at zero, and completly black at 255*/
-	void drawBoxEntity(RenderInformation drawTarget, int shift, int darkness, float postScale) {
+	/*darkness is brightest at zero, and completly black at 255
+	return 0 (no draw), 1 (simple draw), 2 (lighting draw)*/
+	int drawBoxEntity(RenderInformation drawTarget, int shift, int darkness, float postScale) {
 		boxCountRunningTotal++;
 		SDL_Rect copyReference = drawTarget.renderSize;
+
+		if not(drawTarget.inView)
+			return 0;
 
 		if (postScale != 0) {
 			copyReference.w = (int)((float)copyReference.w * postScale);
@@ -161,7 +165,7 @@ protected:
 			SDL_SetTextureAlphaMod(drawTarget.currentFrame, 255);
 		}
 		else { //If there isn't anything to draw, leave early so a shadow isn't drawn
-			return;
+			return 0;
 		}
 
 		//Add shadow
@@ -186,7 +190,10 @@ protected:
 				SDL_RenderCopyEx(graphicsState->getGRenderer(), drawTarget.lightFrame, NULL, &copyReference, (double)drawTarget.angle, NULL, SDL_FLIP_NONE);
 			}
 		}
-
+		else {
+			return 1;
+		}
+		return 2;
 	}
 
 public:

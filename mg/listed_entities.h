@@ -131,11 +131,11 @@ public:
 	}
 
 	//Pushes current renderable objects into render buffer
-	void pushToRenderBuffer() {
+	void pushToRenderBuffer(int shift) {
 		if (tryLock()) {
 			renderBuffer.clear();
 			for (auto i : entList) {
-				renderBuffer.push_back(i->renderCopy());
+				renderBuffer.push_back(i->renderCopy(shift));
 			}
 			unlock();
 		}
@@ -157,7 +157,6 @@ public:
 
 		int noBoxes = 0;
 		for (auto i : secondBuffer) {
-			noBoxes++;
 			if (postScale) {
 				i.renderSize.w = (int)((float)i.renderSize.w * postScale);
 				i.renderSize.h = (int)((float)i.renderSize.h * postScale);
@@ -168,17 +167,21 @@ public:
 			i.renderSize.x += shift;
 			i.renderSize.x += 220;
 			i.renderSize.y += 10;
-
-			if (i.alpha > 250) {
+			if not(i.inView) {
+				pass;
+			}
+			else if (i.alpha > 250) {
 				SDL_RenderCopyEx(gState->getGRenderer(), i.currentFrame, NULL, &i.renderSize, (double)i.angle, NULL, SDL_FLIP_NONE);
+				noBoxes++;
 			}
 			else if (i.alpha > 0) {
 				SDL_SetTextureAlphaMod(i.currentFrame, (int)i.alpha);
 				SDL_RenderCopyEx(gState->getGRenderer(), i.currentFrame, NULL, &i.renderSize, (double)i.angle, NULL, SDL_FLIP_NONE);
 				SDL_SetTextureAlphaMod(i.currentFrame, 255);
+				noBoxes++;
 			}
 			
-			if (i.alpha > 0) {
+			if (i.alpha > 0 && i.inView) {
 				//Add shadow
 				if (darkness > 0) {
 					if (i.alpha > 250) {
@@ -189,6 +192,7 @@ public:
 						SDL_SetTextureAlphaMod(i.shadowFrame, (int)((((float)i.alpha) / 255) * (float)darkness));
 						SDL_RenderCopyEx(gState->getGRenderer(), i.shadowFrame, NULL, &i.renderSize, (double)i.angle, NULL, SDL_FLIP_NONE);
 					}
+					noBoxes++;
 				}
 				//Or add light
 				else if (darkness < 0) {
@@ -200,6 +204,7 @@ public:
 						SDL_SetTextureAlphaMod(i.lightFrame, -1 * (int)((((float)i.alpha) / 255) * (float)darkness));
 						SDL_RenderCopyEx(gState->getGRenderer(), i.lightFrame, NULL, &i.renderSize, (double)i.angle, NULL, SDL_FLIP_NONE);
 					}
+					noBoxes++;
 				}
 			}
 		}

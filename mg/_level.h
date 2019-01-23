@@ -439,13 +439,13 @@ private:
 			//Do a quick quick check first for collision
 			if (quickCheckTwoPointsDistance(i->getPosition(), player->getPosition(), i->getHitBox() + player->getHitBox())) {
 				if (i->getPosition().getDistanceToPoint(player->getPosition()) < (i->getHitBox() + player->getHitBox())) {
-					1;
+					player->registerHit();
 				}
 			}
 			
 		}
 		totalBulletList.unlock();
-		totalBulletList.pushToRenderBuffer();
+		totalBulletList.pushToRenderBuffer(shift);
 
 		//update power ups
 		powerUps.lock();
@@ -459,7 +459,7 @@ private:
 		}
 		powerUps.unlock();
 		powerUps.cleanDeathFlags();
-		powerUps.pushToRenderBuffer();
+		powerUps.pushToRenderBuffer(shift);
 
 		//update player bullet list
 		playerBullets.lock();
@@ -468,7 +468,7 @@ private:
 		}
 		playerBullets.unlock();
 		playerBullets.cleanDeathFlags();
-		playerBullets.pushToRenderBuffer();
+		playerBullets.pushToRenderBuffer(shift);
 
 		//Compute interactions between enemies and player bullets
 		playerBullets.lock();
@@ -557,9 +557,9 @@ private:
 		backgroundObjectManager->lock();
 		for (auto i : backgroundObjectManager->getSharedList()->getEntList()) {
 			if (i->getDepth() > 0) {
-				auto temp = i->renderCopy();
+				auto temp = i->renderCopy(shift);
 				temp.renderSize.x += (int)(player->getPosition().x - i->getPosition().x);
-				drawBoxEntity(temp, para::getShift( player->getPosition(), i->getPosition(), i->getDepth() ), FULLNORMAL,
+				boxCountRunningTotal += drawBoxEntity(temp, para::getShift( player->getPosition(), i->getPosition(), i->getDepth() ), FULLNORMAL,
 					para::getSizeScaler( i->getDepth() ) );
 			} 
 		}
@@ -569,7 +569,7 @@ private:
 		anonEnts.lock();
 		for (auto i : anonEnts.getEntList()) {
 			if (!i->getAbovePlayerBullets()) {
-				drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(0), FULLSIZE);
+				boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(0), FULLSIZE);
 			}
 		}
 		anonEnts.unlock();
@@ -593,7 +593,7 @@ private:
 		anonEnts.lock();
 		for (auto i : anonEnts.getEntList()) {
 			if (i->getAbovePlayerBullets()) {
-				drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+				boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 			}
 		}
 		anonEnts.unlock();
@@ -601,10 +601,10 @@ private:
 		//Draw player
 		player->lock();
 		if (player->getTargetable()) {
-			drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			boxCountRunningTotal += drawBoxEntity(player->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		else if ((cycle %10) <5 ) {
-			drawBoxEntity(player->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			boxCountRunningTotal += drawBoxEntity(player->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		
 		player->unlock();
@@ -615,7 +615,7 @@ private:
 		//Draw Enemies
 		enemyEntities.lock();
 		for (auto i : enemyEntities.getEntList()) {
-			drawBoxEntity(i->renderCopy(), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
 		enemyEntities.unlock();
 

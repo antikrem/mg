@@ -168,7 +168,9 @@ float BoxEntity::getAlpha() {
 	}
 }
 
-RenderInformation  BoxEntity::renderCopy() {
+#define VIEWRECT { 0,0,RENDERED_X,WORK_SPACE_Y }
+
+RenderInformation  BoxEntity::renderCopy(int shift) {
 	RenderInformation returnValue;
 	returnValue.currentFrame = getCurrentFrame();
 	returnValue.shadowFrame = getCurrentShadowFrame();
@@ -176,5 +178,17 @@ RenderInformation  BoxEntity::renderCopy() {
 	returnValue.renderSize = getRenderSize();
 	returnValue.angle = getAngle();
 	returnValue.alpha = getAlpha();
+
+	int offset = (int)sqrt(returnValue.renderSize.x + returnValue.renderSize.y);
+	SDL_Rect view = VIEWRECT;
+	view.x -= offset;
+	view.y -= offset;
+	view.h += 2*offset;
+	view.w += 2*offset;
+	view.x -= shift;
+	
+	CUS_Point pos = { (float)returnValue.renderSize.x + (float)returnValue.renderSize.w/2 , (float)returnValue.renderSize.y + (float)returnValue.renderSize.h / 2 };
+	returnValue.inView = (checkPointInRect(pos, view));
+
 	return returnValue;
 }

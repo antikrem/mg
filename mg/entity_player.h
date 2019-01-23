@@ -14,6 +14,10 @@ To be used only in _level.h*/
 
 #define MAX_BULLETS_PER_PLAYER 30
 
+//DEATH CONSTANTS
+#define RESPAWN_I_FRAMES 580
+#define DEATH_REACTION_DELAY 30
+
 //Movement characteristices
 #define PLAYER_MAX_DASH_VELOCITY (float)13.2
 #define PLAYER_ACCELERATION (float)0.62
@@ -63,6 +67,9 @@ protected:
 	Input dashDirection;
 
 	//hit stuff
+	//-1 is no hit, >0 is countdown, 0 is death
+	int deathCounter = -1;
+	bool desperateWagerSignal = false;
 	bool targetable = true;
 	int targetableCounter = 0;
 	int onRails = 0;
@@ -88,6 +95,17 @@ public:
 		targetableCounter--;
 		if (!targetable && targetableCounter < 0) {
 			targetable = true;
+		}
+
+		if (deathCounter > 0) {
+			deathCounter--;
+			if (playIn.special) {
+				deathCounter = -1;
+			}
+		}
+		else if (deathCounter == 0) {
+			deathCounter = -1;
+			handleDeath();
 		}
 
 		internalCycles++;
@@ -232,15 +250,23 @@ public:
 			onRails--;
 			position.y -= (float)2.5;
 		}
-
 		updateBox();
 	}
 
-	void registerHit() {
+	//Handles the player dying
+	void handleDeath() {
 		targetable = false;
-		targetableCounter = 550;
+		targetableCounter = RESPAWN_I_FRAMES;
 		onRails = 270;
 		position = { (float)(WORK_SPACE_X) / 2, (float)(WORK_SPACE_Y + 500) };
+	}
+
+	//Register a hit
+	void registerHit() {
+		if (deathCounter == -1 && targetable) {
+			deathCounter = DEATH_REACTION_DELAY;
+		}
+		
 	}
 
 	bool getOnRails() {

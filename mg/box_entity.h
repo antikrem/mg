@@ -11,6 +11,8 @@
 /*Structure used by engine for rendering a BoxEntity
 */
 struct RenderInformation {
+	//If false don't render
+	bool inView = true;
 	float alpha = 255;
 	SDL_Texture* currentFrame;
 	SDL_Texture* shadowFrame;
@@ -82,7 +84,7 @@ public:
 
 	float getAlpha();
 
-	RenderInformation renderCopy();
+	RenderInformation renderCopy(int shift);
 };
 
 #endif
