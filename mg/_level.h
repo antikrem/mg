@@ -104,9 +104,22 @@ private:
 	TextMaster* uiTextMaster;
 
 	//Overlay Texture
-	SDL_Texture* overlay;
+	SDL_Texture* overlay = NULL;
+
+	//Circle texture for hitbox rendering
+	SDL_Texture* hitBoxSizeTexture = NULL;
+	//If true render hitbox
+	atomic<bool> hitBoxSizeRender = false;
 
 private:
+	//Draws hitbox for individual listed entity
+	void drawHitBox(ListedEntity* ent) {
+		if (hitBoxSizeRender) {
+			SDL_Rect hitRect = { (int)(ent->getPosition().x - ent->getHitBox() + 220 + shift), (int)(ent->getPosition().y - ent->getHitBox()), 2*(int)(ent->getHitBox()), 2*(int)(ent->getHitBox()) };
+			SDL_RenderCopy(graphicsState->getGRenderer(), hitBoxSizeTexture, NULL, &hitRect);
+		}
+	}
+
 	void levelProcessCommand(string command, bool fromMaster) {
 		auto lineVec = str_kit::splitOnToken(command, ' ');
 
@@ -150,6 +163,17 @@ private:
 				else
 					err::logMessage("WIND was called by master on cycle " + to_string(counter) + " with invalid number of parameters " + to_string(lineVec.size() - 1) + " expected 1/2 parameter");
 			}
+		}
+		else if (lineVec[0] == "HITBOX") {
+			if not(hitBoxSizeTexture) {
+				SDL_Surface* hitBoxSurf = IMG_Load("assets//UI//hitbox.png");
+				hitBoxSizeTexture = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), hitBoxSurf);
+				if (!hitBoxSizeTexture) {
+					err::logMessage("Hitbox file corrupted or missing, check assets//UI//hitbox.png, or reinstall");
+				}
+				SDL_FreeSurface(hitBoxSurf);
+			}
+			hitBoxSizeRender = !hitBoxSizeRender;
 		}
 		else if (lineVec[0] == "WEATHER") {
 			if (lineVec.size() != 2) {
@@ -278,7 +302,6 @@ private:
 		stopAllSoundChannels();
 		freeLocalSoundAndMusic();
 
-
 		delete backgroundManager;
 		backgroundManager = NULL;
 
@@ -296,6 +319,9 @@ private:
 
 		clearLocalAnimaionStore();
 		SDL_DestroyTexture(overlay);
+
+		if (hitBoxSizeTexture)
+			SDL_DestroyTexture(hitBoxSizeTexture);
 	}
 
 	void computeCycle() {
@@ -647,6 +673,12 @@ private:
 
 		//Draw float text
 		floatTextMaster->renderText(shift + 220);
+
+		//Draw hitboxes
+		drawHitBox(player);
+		playerBullets.renderHitBoxes(hitBoxSizeRender, graphicsState, hitBoxSizeTexture, shift);
+		totalBulletList.renderHitBoxes(hitBoxSizeRender, graphicsState, hitBoxSizeTexture, shift);
+		enemyEntities.renderHitBoxes(hitBoxSizeRender, graphicsState, hitBoxSizeTexture, shift);
 
 		//Draw weather above
 		weatherMasterLock.lock();

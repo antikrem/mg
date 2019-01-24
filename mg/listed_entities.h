@@ -211,6 +211,24 @@ public:
 
 		return noBoxes;
 	}
+
+
+	//Draw hitboxes
+	int renderHitBoxes(bool render, GraphicsState* gState, SDL_Texture* hitboxTex, int shift) {
+		int drawn = 0;
+		if (render) {
+			lock();
+			SDL_Rect hitRect;
+			for (auto i : entList) {
+				drawn++;
+				hitRect = { (int)(i->getPosition().x - i->getHitBox() + 220 + shift), (int)(i->getPosition().y - i->getHitBox()), 2*(int)(i->getHitBox()), 2*(int)(i->getHitBox()) };
+				SDL_RenderCopy(gState->getGRenderer(), hitboxTex, NULL, &hitRect);
+			}
+
+			unlock();
+		}
+		return drawn;
+	}
 };
 
 #endif
