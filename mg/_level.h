@@ -111,13 +111,26 @@ private:
 		auto lineVec = str_kit::splitOnToken(command, ' ');
 
 		if (lineVec[0] == "WIND") {
-			if (lineVec.size() != 3) {
-				if (!fromMaster)
-					err::logConsoleMessage("Expected command + 2 parameter, got: " + to_string(lineVec.size() - 1));
-				else
-					err::logMessage("WIND was called by master on cycle " + to_string(counter) + " with invalid number of lines " + to_string(lineVec.size() - 1) + " expected 2 parameter");
+			
+			if (lineVec.size() == 2) {
+				if (lineVec[1] == "CLEAR") {
+					int size = windBursts.size();
+					windBursts.clear();
+					err::logConsoleMessage("WIND bursts was clear, number cleared: " + to_string(size));
+				}
+				else if (lineVec[1] == "SIZE") {
+					err::logConsoleMessage("Number of WIND bursts is: " + to_string(windBursts.size()));
+				}
+				else {
+					if (!fromMaster)
+						err::logConsoleMessage("WIND called with 1 invalid parameter: " + lineVec[1]);
+					else
+						err::logMessage("WIND called by master with 1 invalid parameter: " + lineVec[1]);
+
+				}
+				
 			}
-			else {
+			else if (lineVec.size() == 3) {
 				try {
 					windBursts.push_back({ stof(lineVec[1]), stof(lineVec[2]) });
 					if (!fromMaster)
@@ -130,6 +143,12 @@ private:
 					else
 						err::logConsoleMessage("Requested value was not two numbers");
 				}
+			}
+			else {
+				if (!fromMaster)
+					err::logConsoleMessage("Expected command either 1 or 2 parameters, got: " + to_string(lineVec.size() - 1));
+				else
+					err::logMessage("WIND was called by master on cycle " + to_string(counter) + " with invalid number of parameters " + to_string(lineVec.size() - 1) + " expected 1/2 parameter");
 			}
 		}
 		else if (lineVec[0] == "WEATHER") {
