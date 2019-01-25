@@ -143,19 +143,36 @@ private:
 				}
 				
 			}
-			else if (lineVec.size() == 3) {
-				try {
-					windBursts.push_back({ stof(lineVec[1]), stof(lineVec[2]) });
-					if (!fromMaster)
-						err::logConsoleMessage("Current windburst count is: " + to_string(windBursts.size()));
+			else if (lineVec.size() == 4) {
+				if (lineVec[1] == "BURST") {
+					try {
+						windBursts.push_back({ stof(lineVec[2]), stof(lineVec[3]) });
+						if (!fromMaster)
+							err::logConsoleMessage("Current windburst count is: " + to_string(windBursts.size()));
+					}
+					catch (const std::exception & ex) {
+						ex.what();
+						if (fromMaster)
+							err::logMessage("WIND BURST was called by master as " + command + " which has an invalid parameter at line " + to_string(counter));
+						else
+							err::logConsoleMessage("Requested value was not two numbers");
+					}
 				}
-				catch (const std::exception & ex) {
-					ex.what();
-					if (fromMaster)
-						err::logMessage("WIND was called by master as " + command + " which has an invalid parameter at line " + to_string(counter));
-					else
-						err::logConsoleMessage("Requested value was not two numbers");
+				else if (lineVec[1] == "BASE") {
+					try {
+						baseWindSpeed = { stof(lineVec[2]), stof(lineVec[3]) };
+						if (!fromMaster)
+							err::logConsoleMessage("Current base winspeed count is: " + to_string(baseWindSpeed.magnitude) + " in direction: " + to_string(baseWindSpeed.angle));
+					}
+					catch (const std::exception & ex) {
+						ex.what();
+						if (fromMaster)
+							err::logMessage("WIND BASE was called by master as " + command + " which has an invalid parameter at line " + to_string(counter));
+						else
+							err::logConsoleMessage("Requested value was not two numbers");
+					}
 				}
+				
 			}
 			else {
 				if (!fromMaster)
