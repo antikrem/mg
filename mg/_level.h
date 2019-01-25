@@ -32,6 +32,8 @@ private:
 
 	//Playermovement on plane, scaled for lower levels
 	float planeSpeed = 0.5F ;
+	float planeAcceleration = 0;
+	int planeAccelerationCycles = 0;
 
 	//Speed of wind, used for particles and weather
 	CUS_Polar baseWindSpeed = { 0.1f, 90 };
@@ -123,8 +125,28 @@ private:
 	void levelProcessCommand(string command, bool fromMaster) {
 		auto lineVec = str_kit::splitOnToken(command, ' ');
 
-		if (lineVec[0] == "WIND") {
-			
+		if (lineVec[0] == "PLANE") {
+			if (lineVec.size() == 2) {
+				if (lineVec[1] == "INFO") {
+					err::logConsoleMessage("WIND SPEED current: " + to_string(planeSpeed));
+					err::logConsoleMessage("WIND ACCLERATION new: " + to_string(planeAcceleration) + " for cycles: " + to_string(planeAccelerationCycles));
+				}
+			}
+			if (lineVec.size() == 3) {
+				if (lineVec[1] == "SPEED") {
+					planeSpeed = stof(lineVec[2]);
+					err::logConsoleMessage("WIND SPEED new: " + to_string(planeSpeed));
+				}
+			}
+			else if (lineVec.size() == 4) {
+				if (lineVec[1] == "ACCELERATION") {
+					planeAcceleration = stof(lineVec[2]);
+					planeAccelerationCycles = stoi(lineVec[3]);
+					err::logConsoleMessage("WIND ACCLERATION new: " + to_string(planeAcceleration) + " for cycles: " + to_string(planeAccelerationCycles));
+				}
+			}
+		}
+		else if (lineVec[0] == "WIND") {
 			if (lineVec.size() == 2) {
 				if (lineVec[1] == "CLEAR") {
 					int size = windBursts.size();
@@ -378,6 +400,10 @@ private:
 		}
 
 		//Manage windspeed
+		if (planeAccelerationCycles > 0) {
+			planeAccelerationCycles--;
+			planeSpeed += planeAcceleration;
+		}
 		windSpeed = baseWindSpeed + burstWindSpeed;
 		windToStore = toPoint(windSpeed);
 		windToStore.y += planeSpeed;
