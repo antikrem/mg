@@ -146,6 +146,30 @@ void SlaveInstance::processCommand(string command, bool fromMaster) {
 
 		}
 	}
+	else if (lineVec[0] == "TOTALWIND") {
+		if (lineVec.size() == 2) {
+			if (lineVec[1] == "INFO") {
+				err::logConsoleMessage("TOTALWIND current: " + to_string(totalWindSum.load().x) + " " + to_string(totalWindSum.load().y));
+			} else if (lineVec[1] == "FORCESTILL") {
+				totalWindSumForceStill = !totalWindSumForceStill;
+				if (totalWindSumForceStill) {
+					err::logConsoleMessage("All subsystems that require totalWind will ignore this component in calculation");
+				}
+				else {
+					err::logConsoleMessage("All subsystems that require totalWind will use this component in calculation");
+				}
+				
+			}
+		}
+	}
+	else if (lineVec[0] == "PARTICLE") {
+		if (lineVec.size() == 6) {
+			if (lineVec[1] == "SPAWNSINGLE") {
+				particleMaster->spawnParticle({ stof(lineVec[2]),stof(lineVec[3]) }, { stof(lineVec[4]),stof(lineVec[5]) }, particle_gold);
+
+			}
+		}
+	}
 	else if (lineVec[0] == "BACKGROUND") {
 		pass;
 	}
@@ -382,7 +406,7 @@ void SlaveInstance::renderer() {
 					fpsTextMaster->updateTextByKey("fps", "fps: " + to_string((int)average));
 					fpsTextMaster->updateTextByKey("dropped", "drop: " + str_kit::convertToScoreString((3333 * cyclesPerDraw * 100) / ((float)cycleDrawCounter), false) + " (" + str_kit::convertToScoreString((cycleLoadDrawCounter * 100) / ((float)3333 * cyclesPerDraw), false) +")");
 					fpsTextMaster->updateTextByKey("boxes", "boxes: " + to_string(boxCountCurrent));
-					fpsTextMaster->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " (in " + to_string(particleGroupCount) + ") with " + to_string(particleSlaveCount) + " at " + to_string(particleLoad) + "%");
+					fpsTextMaster->updateTextByKey("particle", "p_master: " + to_string(particleMasterCount) + " appliers (in " + to_string(particleGroupCount) + " groups) with " + to_string(particleSlaveCount) + " free particles at " + to_string(particleLoad) + "%");
 					fpsTextMaster->updateTextByKey("cycle", "cycle: " + to_string(counter) + (stuckCounter ? " STUCK" : " FREE"));
 					fpsTextMaster->updateTextByKey("weather", "weather: " + weather2String(weatherToReport) + " | B: " + to_string(numberOfWeatherClips[0]) + " | M: " + to_string(numberOfWeatherClips[1]) + " | A: " + to_string(numberOfWeatherClips[2]));
 					cycleDrawCounter = 0;

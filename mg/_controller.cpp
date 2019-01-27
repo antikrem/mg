@@ -39,7 +39,7 @@ Input catchInput(KeyBind* keyBind, SDL_Event* evt, char* nextIn) {
 				}
 			}
 			//Take these keys direct, they are special af
-			else if (key.sym == SDLK_SPACE || key.sym == SDLK_BACKSPACE || key.sym == SDLK_RETURN) {
+			else if (key.sym == SDLK_SPACE || key.sym == SDLK_BACKSPACE || key.sym == SDLK_RETURN || key.sym == SDLK_PERIOD) {
 				*nextIn = (char)key.sym;
 			}
 

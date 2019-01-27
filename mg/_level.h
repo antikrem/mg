@@ -128,21 +128,21 @@ private:
 		if (lineVec[0] == "PLANE") {
 			if (lineVec.size() == 2) {
 				if (lineVec[1] == "INFO") {
-					err::logConsoleMessage("WIND SPEED current: " + to_string(planeSpeed));
-					err::logConsoleMessage("WIND ACCLERATION new: " + to_string(planeAcceleration) + " for cycles: " + to_string(planeAccelerationCycles));
+					err::logConsoleMessage("PLANE SPEED current: " + to_string(planeSpeed));
+					err::logConsoleMessage("PLANE ACCLERATION current: " + to_string(planeAcceleration) + " for cycles: " + to_string(planeAccelerationCycles));
 				}
 			}
 			if (lineVec.size() == 3) {
 				if (lineVec[1] == "SPEED") {
 					planeSpeed = stof(lineVec[2]);
-					err::logConsoleMessage("WIND SPEED new: " + to_string(planeSpeed));
+					err::logConsoleMessage("PLANE SPEED new: " + to_string(planeSpeed));
 				}
 			}
 			else if (lineVec.size() == 4) {
 				if (lineVec[1] == "ACCELERATION") {
 					planeAcceleration = stof(lineVec[2]);
 					planeAccelerationCycles = stoi(lineVec[3]);
-					err::logConsoleMessage("WIND ACCLERATION new: " + to_string(planeAcceleration) + " for cycles: " + to_string(planeAccelerationCycles));
+					err::logConsoleMessage("PLANE ACCLERATION new: " + to_string(planeAcceleration) + " for cycles: " + to_string(planeAccelerationCycles));
 				}
 			}
 		}
@@ -407,7 +407,14 @@ private:
 		windSpeed = baseWindSpeed + burstWindSpeed;
 		windToStore = toPoint(windSpeed);
 		windToStore.y += planeSpeed;
-		totalWindSum.store(windToStore);
+		if (totalWindSumForceStill) {
+			totalWindSum.store({ 0,0 });
+			windSpeed = { 0,0 };
+		}
+		else {
+			totalWindSum.store(windToStore);
+		}
+		
 		burstDuration--;
 		//If there is no burst,
 		if (currentBurst < 0) {
@@ -458,7 +465,7 @@ private:
 
 		//Update weather
 		weatherMasterLock.lock();
-		weatherEffectManager->update(planeSpeed, windSpeed, lightMaster, currentShiftVelocity);
+		weatherEffectManager->update(windSpeed, lightMaster, currentShiftVelocity);
 		for (int i = 0; i < 3; i++)
 			numberOfWeatherClips[i] = weatherEffectManager->getEffectsCountByIndex(i);
 		weatherToReport = weatherEffectManager->getWeatherType();

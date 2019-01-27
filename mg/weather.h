@@ -169,7 +169,7 @@ public:
 		}
 	}
 
-	void update(float levelScroll, CUS_Polar windspeed, LightMaster* lightMaster, float velocityShift) {
+	void update(CUS_Polar windspeed, LightMaster* lightMaster, float velocityShift) {
 		if (weatherType == noweather)
 			lightMaster->setLightMode(LMNormal);
 		if (weatherType == rain)
@@ -191,7 +191,6 @@ public:
 				CUS_Point oldPos = weatherEffectsAbove[i].position;
 				weatherEffectsAbove[i].position.x += ABOVE_SCALE * windspeed.toPoint().x;
 				weatherEffectsAbove[i].position.y += ABOVE_SCALE * windspeed.toPoint().y;
-				weatherEffectsAbove[i].position.y += ABOVE_SCALE * levelScroll;
 				weatherEffectsAbove[i].position.y += ABOVE_SCALE * 10;
 				weatherEffectsAbove[i].position.x += ABOVE_SCALE * weatherEffectsAbove[i].verticalskew;
 				newPos = weatherEffectsAbove[i].position;
@@ -200,7 +199,6 @@ public:
 			}
 
 			totalDriftAbove += toPoint(windspeed);
-			totalDriftAbove.y += levelScroll;
 			totalDriftAbove.y += 10;
 
 			if (weatherType == rain) {
@@ -276,7 +274,6 @@ public:
 				CUS_Point oldPos = weatherEffectsMiddle[i].position;
 				weatherEffectsMiddle[i].position.x += windspeed.toPoint().x;
 				weatherEffectsMiddle[i].position.y += windspeed.toPoint().y;
-				weatherEffectsMiddle[i].position.y += levelScroll;
 				weatherEffectsMiddle[i].position.y += 10;
 				weatherEffectsMiddle[i].position.x += weatherEffectsMiddle[i].verticalskew;
 				newPos = weatherEffectsMiddle[i].position;
@@ -285,7 +282,6 @@ public:
 			}
 
 			totalDriftMiddle += toPoint(windspeed);
-			totalDriftMiddle.y += levelScroll;
 			totalDriftMiddle.y += 10;
 
 			if (weatherType == rain) {
@@ -357,7 +353,6 @@ public:
 				CUS_Point oldPos = weatherEffectsBelow[i].position;
 				weatherEffectsBelow[i].position.x += BELOW_SCALE * windspeed.toPoint().x;
 				weatherEffectsBelow[i].position.y += BELOW_SCALE * windspeed.toPoint().y;
-				weatherEffectsBelow[i].position.y += BELOW_SCALE * levelScroll;
 				weatherEffectsBelow[i].position.y += BELOW_SCALE * 10;
 				weatherEffectsBelow[i].position.x += BELOW_SCALE * weatherEffectsBelow[i].verticalskew;
 				newPos = weatherEffectsBelow[i].position;
@@ -366,7 +361,6 @@ public:
 			}
 
 			totalDriftBelow += toPoint(windspeed);
-			totalDriftBelow.y += levelScroll;
 			totalDriftBelow.y += 10;
 
 			if (weatherType == rain) {

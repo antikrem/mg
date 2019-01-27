@@ -81,6 +81,7 @@ protected:
 	ParticleManager* particleMaster = NULL;
 	//Total wind for particle master
 	atomic<CUS_Point> totalWindSum;
+	atomic<bool> totalWindSumForceStill = false;
 
 	//Console Variables
 	atomic<bool> inConsole = false;

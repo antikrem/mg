@@ -43,6 +43,11 @@ enum ParticleType {
 	particle_gold
 };
 
+//Used in the particle render buffer
+struct ParticleRender {
+
+};
+
 //Represents one particle, requires manager to store textures
 struct Particle {
 	ParticleType particleType;
@@ -166,9 +171,17 @@ class ForceApplier : public ThreadSafe {
 
 	CUS_Point position = { 0, 0 };
 	CUS_Point velocity = { 0, 0 };
-	float acceleration = 0;
-	float maxVelocity = 0;
-	float maxAcceleration = 0;
+	CUS_Point acceleration = { 0, 0 };
+
+	atomic<float> velocityMagnitude = 0;
+	atomic<float> accelerationMagnitude = 0;
+
+	//spike values that are used for calculating the current cycle of calculation
+	atomic<float> spikeVelocity = 0;
+	atomic<float> spikeAcceleration = 0;
+	//max values used in the calculation of max affect range
+	atomic<float> maxVelocity = 0;
+	atomic<float> maxAcceleration = 0;
 	//Maximum range that particles are added to this applier
 	float maxAffectRange = 0;
 
@@ -197,13 +210,25 @@ public:
 
 	void updatePositionAndVelocity(CUS_Point position, CUS_Point velocity) {
 		this->position = position;
-		float f;
-		acceleration = (f = this->velocity.toPolarMagnitude() - velocity.toPolarMagnitude()) > 0 ? f : 0;
-		if (acceleration > maxAcceleration)
-			this->maxAcceleration = acceleration;
+
+		acceleration = velocity - this->velocity;
+		accelerationMagnitude = acceleration.toPolarMagnitude();
+		if (accelerationMagnitude > maxAcceleration)
+			maxAcceleration.store(accelerationMagnitude.load());
+		if (accelerationMagnitude > spikeAcceleration)
+			spikeAcceleration.store(accelerationMagnitude.load());
+
 		this->velocity = velocity;
-		if (velocity.toPolarMagnitude() > maxVelocity)
-			maxVelocity = velocity.toPolarMagnitude();
+		velocityMagnitude = velocity.toPolarMagnitude();
+		if (velocityMagnitude > maxVelocity)
+			maxVelocity.store(velocityMagnitude.load());
+		if (velocityMagnitude > spikeVelocity)
+			spikeVelocity.store(velocityMagnitude.load());
+
+		//cout << "mag: " << accelerationMagnitude << " " << velocityMagnitude << endl;
+		//cout << "max: " << maxAcceleration << " " << maxVelocity << endl;
+		//cout << "spike: " << spikeAcceleration << " " << spikeVelocity << endl;
+		
 	}
 
 	//This updates the velocity of the particle based on force applier interaction
@@ -211,10 +236,10 @@ public:
 		//add displacement force
 		for (auto particle : localParticles) {
 			if (auto p = particle.lock()) {
-				float distance = (p->position - position - position).toPolarMagnitude();
+				float distance = (p->position - position).toPolarMagnitude();
 				float f;
 				auto displacement = (
-					f = mass * ((-1 * DISTANCE_CONSTANT / PROXIMITY_DISPLACEMENT)* distance + DISTANCE_CONSTANT + VELOCITY_CONSTANT * velocity.toPolarMagnitude() + ACCELERATION_CONSTANT * acceleration
+					f = mass * ((-1 * DISTANCE_CONSTANT / PROXIMITY_DISPLACEMENT)* distance + DISTANCE_CONSTANT + VELOCITY_CONSTANT * velocity.toPolarMagnitude() + ACCELERATION_CONSTANT * accelerationMagnitude
 						) > 0 ? f : 0);
 			}
 		}
@@ -251,8 +276,6 @@ class ParticleManager : public ThreadSafe {
 	int neightbourhoodGroupAllocator = 0;
 	//last neighbourhood group updated
 	int neightbourhoodGroupUpdate = 0;
-	//When a group is updated less frquently, it could look to be going slower
-	//Thus, the update is done as many times as there are groups
 
 	GraphicsState* graphicsState = NULL;
 	//For rendering purposes
@@ -381,7 +404,6 @@ public:
 		for (auto particle : mainParticleList) {
 			particle->particleLock.lock();
 			frame = particle->cycle / ANIMATION_FRAMES;
-			cout << frame << endl;
 			if (frame < particleTemplates[particle->particleType][particle->textureIdentifier].numberOfFrames) {
 				src = particleTemplates[particle->particleType][particle->textureIdentifier].getCurrentFrameRect(frame);
 				dst = particleTemplates[particle->particleType][particle->textureIdentifier].getRenderRect(particle->position);
