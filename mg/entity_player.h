@@ -372,7 +372,7 @@ public:
 		backupFrameType = idle;
 		currentFrameType = idle;
 
-		hitBox = 25;
+		hitBox = 23;
 
 		setAnimationSet( getFromStore("default_player") );
 
