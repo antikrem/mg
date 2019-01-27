@@ -5,6 +5,12 @@
 #include "listed_entities.h"
 #include "constants.h"
 
+enum AngleState {
+	verticleAngle,
+	velocityAngle
+
+};
+
 //If not force, add
 struct MovementCommand {
 
@@ -17,7 +23,6 @@ struct MovementCommand {
 	bool forceSpeed;
 	float speed;
 
-	bool fixToMaster = false;
 
 	MovementCommand() {
 	}
@@ -41,6 +46,9 @@ protected:
 	//Position of the first master
 	CUS_Point lastMaster = { 0,0 };
 
+	//Direction used for pointing
+	AngleState angleState = verticleAngle;
+
 	map <int, MovementCommand> upcomingUpdates;
 	MovementCommand currentUpdate = { true, false, false, 0, true, false, 0 };
 
@@ -53,8 +61,20 @@ public:
 		upcomingUpdates[startingFrame] = currentUpdate;
 	}
 
-	void updateStartingPosition(CUS_Point position) {
+	void setStartingPosition(CUS_Point position) {
 		this->position = position;
+	}
+
+	void setStartingVelocity(CUS_Point velocity) {
+		this->velocity = velocity;
+		currentUpdate.angle = velocity.toPolarAngle();
+		if (angleState == velocityAngle) {
+			angle = currentUpdate.angle;
+		}
+		else if (angleState == verticleAngle) {
+			angle = 0;
+		}
+		
 	}
 
 	//updates and returns new position
@@ -77,6 +97,9 @@ public:
 		}
 
 		auto tempVelocity = toPolar(velocity);
+		if (angleState == velocityAngle) {
+			angle = tempVelocity.angle;
+		}
 
 		if (!currentUpdate.ignoreSpeed) {
 			if (currentUpdate.forceSpeed)
