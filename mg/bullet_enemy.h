@@ -11,6 +11,9 @@ public:
 	float hitbox;
 	map <int, MovementCommand> movementList;
 	CUS_Polar initialVelocity = { 0, 0 };
+	//Relative is false by default
+	vector<int> flipRelativeTrue;
+	vector<int> flipRelativeFalse;
 
 	BulletTemplate(string animationName, CUS_Polar initialVelocity) {
 		this->animationName = animationName;
@@ -32,7 +35,7 @@ public:
 	///Spawn position
 	//Displacement from spawn controler
 	float displacement = 0;
-	//Angle from spawn Template to spawn
+	//Angle from spawn Template to spawn bullets facing
 	vector<float> exitLocations;
 	//rotation per cycle
 	float rotationSpeed = 0;
@@ -40,13 +43,36 @@ public:
 	///Bullet Control
 	int initialDelay = 0;
 	//Bullet that is spawned by this spawner
-	BulletTemplate* bulletTemplate = NULL;
-	int inbetweenDelay;
+	
+	//Bullets come out whenever spray pattern is equal to current counter
+	//When counter is larger than spray timer, 
+	vector<int> sprayTimer;
+	//When the last spray of spray timer occurs inBetweenDelay is the delay until next volly
+	int inBetweenTimer = 0;
+	//If -1, sprays will go until master is dead, otherwise it will only do this many volleys
+	int rounds = -1;
 
-	BulletSpawnerTemplate(CUS_Point initialPosition, CUS_Point initialVelocity, int inbetweenDelay) {
+	BulletTemplate* bulletTemplate = NULL;
+
+	BulletSpawnerTemplate(CUS_Point initialPosition, CUS_Point initialVelocity) {
 		this->initialPosition = initialPosition;
 		this->initialVelocity = initialVelocity;
-		this->inbetweenDelay = inbetweenDelay;
+	}
+
+	void addSprayTimer( vector<int> sprayTimer ) {
+		this->sprayTimer.insert(this->sprayTimer.end(), sprayTimer.begin(), sprayTimer.end());
+	}
+
+	void setRounds(int rounds) {
+		this->rounds = rounds;
+	}
+
+	void setInitialDelay(int initialDelay) {
+		this->initialDelay = initialDelay;
+	}
+
+	void setInBetweenTimer(int delay) {
+		this->inBetweenTimer = delay;
 	}
 
 	void addExitLocation(float location) {
@@ -92,10 +118,10 @@ public:
 	Bullet(BulletTemplate* bulletTemplate, CUS_Point position, float exitAngle) {
 		auto temp = bulletTemplate->initialVelocity;
 		temp.angle += exitAngle;
-		this->angle = temp.angle;
 		temp.magnitude = temp.magnitude ? temp.magnitude : F(0.00000001);
-		this->velocity = toPoint(temp);
-		this->position = position;
+		angleState = velocityAngle;
+		setStartingVelocity(toPoint(temp));
+		setStartingPosition(position);
 
 		setAnimationSet( getFromStore(bulletTemplate->animationName) );
 
@@ -114,29 +140,50 @@ public:
 
 };
 
-//Bullet Master Actual
+enum BulletSpawnerMode {
+	initialDelayMode,
+	sprayMode,
+	inBetweenTimerMode,
+	sprayOverMode,
+};
+
+//Bullet Spawner Actual
 class BulletSpawner : public MovementCommander {
 private:
 	int internalCounter = 0;
+	int switchTimer = 0;
 
 	float displacement;
 	vector<float> exitLocations;
 	float rotationSpeed = 0;
-	int delayCounter = 0;
-	int inbetweenDelay = 0;
 	BulletTemplate* bulletTemplate = NULL;
 
+	int switchCounter = 0;
+	BulletSpawnerMode mode = initialDelayMode;
+
+	vector<int> sprayTimer;
+	int initialDelay = 0;
+	int lengthOfSpray = 0; 
+	int inBetweenTimer = 0;
+	int currentRound = 0;
+	int rounds = -1;
 
 
 public:
 
 	BulletSpawner(BulletSpawnerTemplate* bulletSpawnerTemplate, CUS_Point masterPosition) {
-		internalCounter = -(bulletSpawnerTemplate->initialDelay);
 		addFirstMaster( masterPosition);
 		position = bulletSpawnerTemplate->initialPosition + lastMaster;
 		velocity = bulletSpawnerTemplate->initialVelocity;
 		bulletTemplate = bulletSpawnerTemplate->bulletTemplate;
-		inbetweenDelay = bulletSpawnerTemplate->inbetweenDelay;
+		inBetweenTimer = bulletSpawnerTemplate->inBetweenTimer;
+		sprayTimer.insert(sprayTimer.begin(), bulletSpawnerTemplate->sprayTimer.begin(), bulletSpawnerTemplate->sprayTimer.end());
+		rounds = bulletSpawnerTemplate->rounds;
+
+		for (auto i : sprayTimer) {
+			if (i > lengthOfSpray)
+				lengthOfSpray = i;
+		}
 
 		for (auto entry : bulletSpawnerTemplate->movementList) {
 			addMovementCommand(entry.first, entry.second);
@@ -151,6 +198,8 @@ public:
 	or vector of new bullets ready to be listed*/
 	vector<Bullet*> update(CUS_Point playerPosition, CUS_Point master) {
 		internalCounter++;
+		switchCounter++;
+
 		updateMovement(playerPosition, &master);
 
 		for (unsigned int i = 0; i < exitLocations.size(); i++) {
@@ -159,15 +208,36 @@ public:
 
 		vector<Bullet*> returnList;
 
-		delayCounter++;
-		if (delayCounter >= inbetweenDelay) {
-			delayCounter = 0;
-			CUS_Polar offset;
-			for (auto angle : exitLocations) {
-				offset = { displacement,angle };
-				returnList.push_back(new Bullet(bulletTemplate, position + toPoint(offset), angle));
+		if (mode == initialDelayMode) {
+			if (switchCounter >= initialDelay) {
+				mode = sprayMode;
+				switchCounter = -1;
 			}
-			
+		} 
+		else if (mode == sprayMode) {
+			if (count(sprayTimer.begin(), sprayTimer.end(), switchCounter)) {
+				CUS_Polar offset;
+				for (auto angle : exitLocations) {
+					offset = { displacement,angle };
+					returnList.push_back(new Bullet(bulletTemplate, position + toPoint(offset), angle));
+				}
+			}
+			if (switchCounter == lengthOfSpray) {
+				mode = inBetweenTimerMode;
+				currentRound++;
+				switchCounter = -1;
+			}
+
+		}
+		else if (mode == inBetweenTimerMode) {
+			if ((currentRound >= rounds) && (rounds != -1)) {
+				mode = sprayOverMode;
+			}
+			if (switchCounter >= inBetweenTimer) {
+				mode = sprayMode;
+				switchCounter = -1;
+			}
+
 		}
 		
 		return returnList;
@@ -241,25 +311,53 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 		else if (lineVec.size() == 0) {
 			pass;
 		}
-		else if (lineVec.size() == 2 && lineVec[0] == "BMT") {
+		else if (lineVec.size() == 2 && lineVec[0] == "BULLETMASTER") {
 			if (bmtToPull) {
 				(*bmtList)[bmtToPull->name] = bmtToPull;
+				bstToPull = NULL;
+				btToPull = NULL;
 			}
 			mode = bmt;
 			bmtToPull = new BulletMasterTemplate(lineVec[1]);
 		}
 		else if (lineVec[0] == "SPAWNER") {
-			if (lineVec.size() == 6) {
+			if (lineVec.size() == 5) {
 
 				mode = bst;
 				if (bmtToPull) {
-					bstToPull = new BulletSpawnerTemplate({ stof(lineVec[1]), stof(lineVec[2]) }, { stof(lineVec[3]), stof(lineVec[4]) }, stoi(lineVec[5]));
+					bstToPull = new BulletSpawnerTemplate({ stof(lineVec[1]), stof(lineVec[2]) }, { stof(lineVec[3]), stof(lineVec[4]) });
 					if (btToPull) {
 						bstToPull->addBulletTemplate(btToPull);
 					}
 					bmtToPull->addBulletSpawnerTemplate(bstToPull);
 				}
 
+			}
+		}
+		else if (lineVec[0] == "VOLLEYTIMER") {
+			if (mode == bst) {
+				vector<int> sprayTimer;
+				for (int i = 1; i < (int)lineVec.size(); i++) {
+					sprayTimer.push_back(stoi(lineVec[i]));
+				}
+				if (bstToPull) {
+					bstToPull->addSprayTimer(sprayTimer);
+				}
+
+			}
+		}
+		else if (lineVec[0] == "BETWEENVOLLEYPAUSE") {
+			if (mode == bst) {
+				if (lineVec.size() == 2) {
+					bstToPull->setInBetweenTimer(stoi(lineVec[1]));
+				}
+			}
+		}
+		else if (lineVec[0] == "ROUNDS") {
+			if (mode == bst) {
+				if (lineVec.size() == 2) {
+					bstToPull->setRounds(stoi(lineVec[1]));
+				}
 			}
 		}
 		else if (lineVec[0] == "EXIT") {

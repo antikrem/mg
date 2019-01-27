@@ -48,8 +48,8 @@ public:
 		this->health = this->maxHealth;
 
 		this->position = startingPosition;
-		updateStartingPosition(startingPosition);
-		this->velocity = startingVelocity;
+		setStartingPosition(startingPosition);
+		setStartingVelocity(startingVelocity);
 		updateBox();
 	}
 

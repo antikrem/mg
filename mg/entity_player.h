@@ -33,7 +33,7 @@ To be used only in _level.h*/
 #define RAGE_RESET 720
 #define BASE_POWER_BUILD 10
 #define MAX_POWER 100
-#define POWER_DRAIN F(0.0075)
+#define POWER_DRAIN F(0.009)
 #define POWER_DRAIN_SHIFT F(0.0005)
 #define GRACED_RAGE_DRAIN F(0.2)
 #define GRACED_RAGE_DRAIN_SHIFT F(0.05)
@@ -372,7 +372,7 @@ public:
 		backupFrameType = idle;
 		currentFrameType = idle;
 
-		hitBox = 50;
+		hitBox = 25;
 
 		setAnimationSet( getFromStore("default_player") );
 
@@ -458,27 +458,27 @@ public:
 
 			CUS_Polar temporarypointspeed = { -310 * turretOffset, 180 + 35 };
 			CUS_Polar tempThing = { 19, 180 - 15 + turretOffset * (float) 26.5 };
-			PlayerBullet* temp = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
+			PlayerBullet* temp = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 5, 10, tempThing.toPoint());
 
 			temporarypointspeed = { -310 * turretOffset, 180 + 21 };
 			tempThing = { 19, 180 - 9 + turretOffset * (float)16 };
-			PlayerBullet* temp1 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
+			PlayerBullet* temp1 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 5, 10, tempThing.toPoint());
 
 			temporarypointspeed = { -310 * turretOffset, 180 + 7 };
 			tempThing = { 19, 180 - 3 + turretOffset * (float) 5.4 };
-			PlayerBullet* temp2 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
+			PlayerBullet* temp2 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 5, 10, tempThing.toPoint());
 
 			temporarypointspeed = { -310 * turretOffset, 180 - 7 };
 			tempThing = { 19, 180 + 3 - turretOffset * (float) 5.4 };
-			PlayerBullet* temp3 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
+			PlayerBullet* temp3 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 5, 10, tempThing.toPoint());
 
 			temporarypointspeed = { -310 * turretOffset, 180 - 21 };
 			tempThing = { 19, 180 + 9 - turretOffset * (float)16 };
-			PlayerBullet* temp4 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
+			PlayerBullet* temp4 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 5, 10, tempThing.toPoint());
 
 			temporarypointspeed = { -310 * turretOffset, 180 - 35 };
 			tempThing = { 19, 180 + 15 - turretOffset * (float) 26.5 };
-			PlayerBullet* temp5 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 50, 10, tempThing.toPoint());
+			PlayerBullet* temp5 = new PlayerBullet("default_bullet", startPos + temporarypointspeed.toPoint(), 5, 10, tempThing.toPoint());
 
 			bulletTable[1] = temp;
 			bulletTable[2] = temp1;

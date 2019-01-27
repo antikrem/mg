@@ -43,11 +43,6 @@ enum ParticleType {
 	particle_gold
 };
 
-//Used in the particle render buffer
-struct ParticleRender {
-
-};
-
 //Represents one particle, requires manager to store textures
 struct Particle {
 	ParticleType particleType;
@@ -83,6 +78,20 @@ struct Particle {
 			) {
 			deathFlag = true;
 		}
+	}
+};
+
+//Used in the particle render buffer
+struct ParticleRender {
+	ParticleType particleType;
+	//The identifier of the texture
+	int textureIdentifier;
+	CUS_Point position;
+
+	ParticleRender(Particle* particle) {
+		this->particleType = particle->particleType;
+		this->textureIdentifier = particle->textureIdentifier;
+		this->position = particle->position;
 	}
 };
 
