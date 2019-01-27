@@ -30,6 +30,9 @@ private:
 	//pause only when equal to zero
 	int pauseCounter = 0;
 
+	//Used to avoid unsticking counter with pauses
+	bool alreadyPause = false;
+
 	//Playermovement on plane, scaled for lower levels
 	float planeSpeed = 0.5F ;
 	float planeAcceleration = 0;
@@ -213,6 +216,9 @@ private:
 				SDL_FreeSurface(hitBoxSurf);
 			}
 			hitBoxSizeRender = !hitBoxSizeRender;
+		}
+		else if (lineVec[0] == "GETPLAYERPOSITION") {
+			err::logConsoleMessage("Player at: " + to_string(player->getPosition().x) + " " + to_string(player->getPosition().y));
 		}
 		else if (lineVec[0] == "WEATHER") {
 			if (lineVec.size() != 2) {
@@ -625,9 +631,15 @@ private:
 		else if (getInput().esc && !pauseCounter) {
 			pauseCounter = 130;
 			if (levelSettingsCurrent->buttonFlag == pause) {
+				if (!alreadyPause)
+					stuckCounter = false;
 				levelSettingsCurrent->buttonFlag = none;
 			}
 			else if (levelSettingsCurrent->buttonFlag == none) {
+				if (stuckCounter) 
+					alreadyPause = true;
+				else
+					stuckCounter = true;
 				levelSettingsCurrent->buttonFlag = pause;
 			}
 		}
