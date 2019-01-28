@@ -4,6 +4,8 @@
 #include "movement_commander.h"
 #include "powerup.h"
 
+#define BULLETBOUNDARYTODELETE { -100, - 100, WORK_SPACE_X+200, WORK_SPACE_Y+200 }
+
 ///Templates
 class BulletTemplate {
 public:
@@ -135,6 +137,8 @@ public:
 	CUS_Point update(CUS_Point playerPosition) {
 		auto ret =  updateMovement(playerPosition, NULL);
 		updateBox();
+		if (!checkPointInRect(position, BULLETBOUNDARYTODELETE))
+			flag = false;
 		return ret;
 	}
 
@@ -230,14 +234,13 @@ public:
 
 		}
 		else if (mode == inBetweenTimerMode) {
-			if ((currentRound >= rounds) && (rounds != -1)) {
-				mode = sprayOverMode;
-			}
 			if (switchCounter >= inBetweenTimer) {
 				mode = sprayMode;
 				switchCounter = -1;
 			}
-
+			if ((currentRound >= rounds) && (rounds != -1)) {
+				mode = sprayOverMode;
+			}
 		}
 		
 		return returnList;

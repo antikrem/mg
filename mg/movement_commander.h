@@ -98,7 +98,10 @@ public:
 
 		auto tempVelocity = toPolar(velocity);
 		if (angleState == velocityAngle) {
-			angle = tempVelocity.angle;
+			angle = -tempVelocity.angle + 180;
+		} 
+		else if (angleState == verticleAngle) {
+			angle = 0;
 		}
 
 		if (!currentUpdate.ignoreSpeed) {
@@ -134,8 +137,6 @@ public:
 			}
 			
 		}
-
-		
 
 		velocity = toPoint(tempVelocity);
 		position += velocity;

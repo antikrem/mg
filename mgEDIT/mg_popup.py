@@ -283,7 +283,7 @@ class PopEnemy(object) :
             return
 
         try:
-            mg.CUS_Point(float(self.__posX.get()), float(self.__posX.get()))
+            mg.CUS_Point(float(self.__posX.get()), float(self.__posY.get()))
         except ValueError:
             messagebox.showerror("Error", "Invalid position")
             self.valid = False
@@ -308,7 +308,7 @@ class PopEnemy(object) :
         
         self.value = mg.EnemyEntity(int(300*float(self._startEntry.get())),
                                         self._animationEntry.get(),
-                                        mg.CUS_Point(float(self.__posX.get()), float(self.__posX.get())),
+                                        mg.CUS_Point(float(self.__posX.get()), float(self.__posY.get())),
                                         velocity,
                                         float(self._hitboxEntry.get()),
                                         int(self._hitpointString.get()))

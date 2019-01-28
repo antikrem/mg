@@ -11,8 +11,11 @@ class main :
         self._campaign = None
         self._level = None
         self._playerPosition = CUS_Point(0,0)
+        
+        #The specific commander that shows on window
+        self._commanderInFocus = None
 
-        #Animation set reference
+        #Animation set
         self._animations = dict()
         self._currentEnemies = []
         #reference to frame canvas elements, for easy clear from clearCanvas()
@@ -98,6 +101,12 @@ class main :
         self._windows["level_load"].infoFrame.infoCampaignValueLabel.grid(column = 0, row = 0)
         self._windows["level_load"].infoFrame.infoLevelValueLabel = tk.Label(self._windows["level_load"].infoFrame, text = "Level: NULL")
         self._windows["level_load"].infoFrame.infoLevelValueLabel.grid(column = 1, row = 0)
+
+        #command windows
+        self._windows["commander"] = tk.Toplevel(self._root)
+        self._windows["commander"].title("Current Commander")
+        self._windows["commander"].geometry("%dx%d+%d+%d" % (686 * self._scale, 630 * self._scale, 1222 * self._scale, 250 * self._scale + 30 ))
+        self._windows["commander"].frame = None
         
     def clickHandler(self, event) :
         self._lastClickPosition._x = event.x / self._gameScale - 100
@@ -141,7 +150,6 @@ class main :
         self._root.wait_window(pop._window)
         if pop.valid :
             enemy = pop.value
-            print(self._maxCycles - enemy._spawningCycle)
             enemy.calculatePositions(self._maxCycles *300 + 10 - enemy._spawningCycle, self._playerPosition)
             self._currentEnemies.append(enemy)
             self.enemyListUpdate()
@@ -172,7 +180,20 @@ class main :
     def bindEvents(self) :
         self._windows["level_view"].bind("<Button-1>", self.clickHandler)
         self._windows["level_view"].bind("<B1-Motion>", self.clickHandler)
-        
+        self._windows["level_load"].listBox.bind("<<ListboxSelect>>", self.focusHandler)
+
+    #sets command view on the following object
+    def focusOnCommander(self, commander) :
+        if self._windows["commander"].frame is None :
+            self._windows["commander"].frame = MovementCommanderFrame(self, commander)
+            self._windows["commander"].frame.pack()
+
+    def focusHandler(self, event) :
+        if (event.widget.curselection() == ()) :
+            self.focusOnCommander(None)
+        else :
+            self.focusOnCommander(self._currentEnemies[event.widget.curselection()[0]])
+    
     def mainloop(self) :
         self._animations.update(loadAnimations(self._pathToMaster + "assets\\", "load_list.txt", ImageLevel.GLOBAL, self))
         cont = True
