@@ -192,11 +192,8 @@ static void pullEnemies(vector<EnemyEntity*>* enemyVec, LevelSettings* levelSett
 			if (!toPull)
 				err::logMessage("ERROR: bulletmaster with no previous enemy at line: " + to_string(lineNo) + " in file " + filePath);
 			else {
-				if (lineVec.size() == 2) {
-					toPull->addBMT(lineVec[1], 0);
-				}
-				else if (lineVec.size() == 3) {
-					toPull->addBMT(lineVec[1], stoi(lineVec[2]));
+				if (lineVec.size() == 3) {
+					toPull->addBMT(lineVec[2], stoi(lineVec[1]));
 				}
 			}
 		}

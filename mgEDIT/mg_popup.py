@@ -38,7 +38,7 @@ class PopCampaign(object) :
         self._campaign = master._campaign
         tk.Label(self._window, text = "Choose campaign").pack()
     
-        self._listbox = tk.Listbox(self._window)
+        self._listbox = tk.Listbox(self._window, exportselection=0)
         self._listbox.pack()
         self.__button = tk.Button( self._window, text = 'Load Existing', command = self.loadCampaign)
         self.__button.pack()

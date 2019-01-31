@@ -498,7 +498,7 @@ private:
 		while (it != upcomingEnemyList.end()) {
 			if ((*it)->getSpawningCycle() == counter) {
 				enemyEntities.pushObject((*it));
-				particleMaster->addForceApplier((*it)->particulate(true));
+//				particleMaster->addForceApplier((*it)->particulate(true));
 				it = upcomingEnemyList.erase(it);
 			}
 			else {
@@ -731,7 +731,7 @@ private:
 		lightMaster->unlock();
 
 		//Draw particles
-		particleMaster->renderParticles(shift);
+//		particleMaster->renderParticles(shift);
 
 		//Draw float text
 		floatTextMaster->renderText(shift + 220);

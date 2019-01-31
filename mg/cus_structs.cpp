@@ -118,9 +118,6 @@ CUS_Polar CUS_Polar::operator*(const CUS_Polar& b) {
 }
 
 CUS_Polar toPolar(CUS_Point point) {
-	if (point.x == 0 and point.y == 0) {
-		return { 0, 0 }; 
-	}
 	return { point.toPolarMagnitude() , point.toPolarAngle() };
 }
 

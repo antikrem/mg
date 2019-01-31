@@ -80,7 +80,7 @@ class main :
         self._windows["level_load"].columnconfigure(2, weight=1)
         self._windows["level_load"].columnconfigure(3, weight=1)
         #List of enemies
-        self._windows["level_load"].listBox = tk.Listbox(self._windows["level_load"])
+        self._windows["level_load"].listBox = tk.Listbox(self._windows["level_load"], exportselection=0)
         self._windows["level_load"].listBox.grid( column = 0, row = 1, rowspan = 3, sticky = tk.N+tk.E+tk.W+tk.S)
 
         self._windows["level_load"].loadButton = tk.Button(self._windows["level_load"], text = "Load Level", command=self.loadHandle)
@@ -124,7 +124,7 @@ class main :
         path = self._pathToMaster + "//campaigns//" + self._campaign + "//" + str(self._level) + "//enemy_table.txt"
         self._currentEnemies = makeListOfEnemiesFromFile(path)
         for ent in self._currentEnemies :
-            ent.calculatePositions(ent._deathCycle, self._playerPosition)
+            ent.calculatePositions(self, self._playerPosition)
         self._animations.update(loadAnimations(self._pathToMaster + "campaigns\\" + self._campaign + "\\" + str(self._level) + "\\", "local_load.txt", ImageLevel.LOCAL, self))
         self.updateCampaignLevelLabel()
         self.enemyListUpdate()
@@ -173,9 +173,12 @@ class main :
         for enemy in self._currentEnemies :
             counter += 1
             deadFail = ""
+            deadWin = ""
             if not enemy._deathInitialised :
                 deadFail = " (No Death Cycle)"
-            self._windows["level_load"].listBox.insert(tk.END, str(counter) + " @ " + str(enemy._spawningCycle/300) + " w\ " + enemy._animationName + deadFail)
+            else :
+                deadWin = " to " + '%.3f' %((enemy._deathCycle + enemy._spawningCycle)/300 ) + " "
+            self._windows["level_load"].listBox.insert(tk.END, str(counter) + " @ " + str(enemy._spawningCycle/300) + deadWin + " w\ " + enemy._animationName + deadFail)
         
     def bindEvents(self) :
         self._windows["level_view"].bind("<Button-1>", self.clickHandler)
@@ -184,10 +187,12 @@ class main :
 
     #sets command view on the following object
     def focusOnCommander(self, commander) :
-        if self._windows["commander"].frame is None :
-            self._windows["commander"].frame = MovementCommanderFrame(self, commander)
-            self._windows["commander"].frame.pack()
-
+        if self._windows["commander"].frame is not None :
+            self._windows["commander"].frame.destroy()
+        self._windows["commander"].frame = MovementCommanderFrame(self, commander)
+        self._windows["commander"].frame.pack_propagate(False)
+        self._windows["commander"].frame.pack()
+            
     def focusHandler(self, event) :
         if (event.widget.curselection() == ()) :
             self.focusOnCommander(None)

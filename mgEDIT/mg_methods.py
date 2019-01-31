@@ -6,6 +6,8 @@ import tkinter as tk
 def makeListOfEnemiesFromFile(path) :
     enemies = []
     toPull = 0;
+
+    print("Pulling Enemies from list")
     
     with open(path, "r+") as file:
         lines = file.readlines()
@@ -32,12 +34,12 @@ def makeListOfEnemiesFromFile(path) :
                     print("Enemy caught")
                     positionStart = CUS_Point(float(currentLine[5]), float(currentLine[6]))
                     positionVelocity = CUS_Point(float(currentLine[7]), float(currentLine[8]))
-                    print("vel")
-                    print(positionVelocity._x)
-                    print(positionVelocity._y)
                     toPull = EnemyEntity(int( currentLine[1]), currentLine[2], positionStart, positionVelocity, float(currentLine[3]), float(currentLine[4]) )
                 else :
                     print("Enemy added when there is already an enemy not pushed")
+            elif currentLine[0] == 'BULLETMASTER' :
+                print(currentLine)
+                toPull.setBulletMaster( int(currentLine[1]), currentLine[2])
             elif currentLine[0] == 'DEATH' :
                 print(currentLine)
                 toPull.setDeathCycle(int(currentLine[1]))
