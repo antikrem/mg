@@ -8,8 +8,10 @@ class EnemyEntity(MovementCommander) :
         #movement commands
         self._hitpoints = hitpoints
         self._hitbox = hitbox
+        
         self._bulletMaster = ""
         self._bulletMasterTime = 0
+        
         super().__init__(positionStart, velocityStart, spawningCycle)
         
         self._animationName = animationName

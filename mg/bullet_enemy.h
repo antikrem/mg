@@ -31,7 +31,7 @@ class BulletSpawnerTemplate {
 public:
 	///Movement Control
 	CUS_Point initialPosition;
-	CUS_Point initialVelocity;
+	CUS_Polar initialVelocity;
 	map <int, MovementCommand> movementList;
 
 	///Spawn position
@@ -56,7 +56,7 @@ public:
 
 	BulletTemplate* bulletTemplate = NULL;
 
-	BulletSpawnerTemplate(CUS_Point initialPosition, CUS_Point initialVelocity) {
+	BulletSpawnerTemplate(CUS_Point initialPosition, CUS_Polar initialVelocity) {
 		this->initialPosition = initialPosition;
 		this->initialVelocity = initialVelocity;
 	}
@@ -120,9 +120,8 @@ public:
 	Bullet(BulletTemplate* bulletTemplate, CUS_Point position, float exitAngle) {
 		auto temp = bulletTemplate->initialVelocity;
 		temp.angle += exitAngle;
-		temp.magnitude = temp.magnitude ? temp.magnitude : F(0.00000001);
 		angleState = velocityAngle;
-		setStartingVelocity(toPoint(temp));
+		setStartingVelocity(temp);
 		setStartingPosition(position);
 
 		setAnimationSet( getFromStore(bulletTemplate->animationName) );

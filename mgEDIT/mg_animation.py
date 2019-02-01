@@ -101,3 +101,13 @@ def loadAnimations(folder, listName,  imageLevel, master) :
                 print("Error at line " + str(lineNo) + " " + str(len(currentLine)))
 
     return animationSets
+
+#Returns a PhotoImage of trail particle 
+def loadTrail(master) :
+    image = Image.open("trail.png")
+    w, h = image.size
+    image.resize(( int(w*master._gameScale),int(h*master._gameScale) ), Image.LANCZOS)
+    image.load()
+    photo = ImageTk.PhotoImage(image)
+    return photo
+    

@@ -122,15 +122,15 @@ MAX_DAMAGE_PER_SECOND = 300
 class PopEnemy(object) :
     def switchVel(obj) :
         try:
-            if obj._pointVel :
+            if not obj._pointVel :
                 a = float(obj.__velX.get())
                 b = float(obj.__velY.get())
                 obj.__velX.delete(0, tk.END)
                 obj.__velY.delete(0, tk.END)
                 obj.__velX.insert(0,sqrt(pow(a, 2) + pow(b, 2)))
                 obj.__velY.insert(0,atan2(a, b)* 180.0 / pi)
-                obj._velLabelX['text'] = "mag"
-                obj._velLabelY['text'] = "ang"
+                obj._velLabelX['text'] = "Mag"
+                obj._velLabelY['text'] = "Ang"
                 obj._toPolBut['text'] = "To Point"
             else :
                 mag = float(obj.__velX.get())
@@ -172,7 +172,7 @@ class PopEnemy(object) :
         self._window.title("Create Enemy")
         self._window.attributes('-topmost', 'true')
         self._startPosView = master._lastClickPosition
-        self._pointVel = CUS_Point(0,0)
+        self._pointVel = False
         
         (tk.Label(self._window, text = "Create enemy")).grid(row=0, columnspan = 3)
         (tk.Label(self._window, text = "Starting frame: ")).grid(row=1, column=0)
@@ -182,7 +182,7 @@ class PopEnemy(object) :
         (tk.Label(self._window, text = "Starting Position: ")).grid(row=5, column=0)
         (tk.Button(self._window, text="From View", command=self.insertFromView)).grid(row=6, column=0)
         (tk.Label(self._window, text = "Starting Velocity: ")).grid(row=7, column=0)
-        self._toPolBut = tk.Button(self._window, text="To Polar", command=self.switchVel)
+        self._toPolBut = tk.Button(self._window, text="To Point", command=self.switchVel)
         self._toPolBut.grid(row=8, column=0)
 
         self.secondsSpawnLabel = tk.Label(self._window, text = " seconds")
@@ -221,19 +221,18 @@ class PopEnemy(object) :
         self.__velX = tk.Entry(self._window)
         self.__velX.grid(row=7, column=1)
         self.__velX.insert(0, "0.0")
-        self._velLabelX = tk.Label(self._window, text = "X")
+        self._velLabelX = tk.Label(self._window, text = "Mag")
         self._velLabelX.grid(row=7, column=2)
         self.__velY = tk.Entry(self._window)
         self.__velY.grid(row=8, column=1)
         self.__velY.insert(0, "0.0")
-        self._velLabelY = tk.Label(self._window, text = "Y")
+        self._velLabelY = tk.Label(self._window, text = "Ang")
         self._velLabelY.grid(row=8, column=2)
                            
         tk.Button(self._window, text="...", command=self.handleAnimation).grid(row=4, column=2)
         self.valid = False
 
         tk.Button(self._window, text="Spawn Enemy", command=self.cleanup).grid(row=9, column=0)
-        self.valid = False
 
         self._window.lift(aboveThis=self._root)
 
@@ -254,7 +253,7 @@ class PopEnemy(object) :
         
         if self._pointVel :
             try:
-                velocity = mg.CUS_Point(float(self.__velX.get()), float(self.__velY.get()))
+                velocity = toPolar(mg.CUS_Point(float(self.__velX.get()), float(self.__velY.get())))
             except ValueError:
                 messagebox.showerror("Error", "Invalid Velocity: must be a decimal or whole number")
                 self.valid = False
@@ -262,7 +261,6 @@ class PopEnemy(object) :
         else :
             try:
                 velocity = mg.CUS_Polar(float(self.__velX.get()), float(self.__velY.get()))
-                velocity = toPoint(velocity)
             except ValueError:
                 messagebox.showerror("Error", "Invalid Velocity: must be a decimal or whole number")
                 self.valid = False

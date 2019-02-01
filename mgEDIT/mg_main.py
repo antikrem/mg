@@ -59,7 +59,11 @@ class main :
         self._windows["level_view"].markerLabel = self._windows["level_view"].create_text((self._lastClickPosition._x + 100) * self._gameScale,
                                                                                           (self._lastClickPosition._y + 100) * self._gameScale,
                                                                                           text = "{0,0)", anchor = tk.SW)
+
+        #load trail iamge
+        self._windows["level_view"]._trail = loadTrail(self)
         self._windows["level_view"].pack()
+        self._windows["level_view"]._trails = []
         
         #create a window for slider
         self._windows["slider_bar"] = tk.Toplevel(self._root)
@@ -85,7 +89,7 @@ class main :
 
         self._windows["level_load"].loadButton = tk.Button(self._windows["level_load"], text = "Load Level", command=self.loadHandle)
         self._windows["level_load"].loadButton.grid( column = 1, row = 1, sticky = tk.N+tk.E+tk.W+tk.S)
-        self._windows["level_load"].saveButton = tk.Button(self._windows["level_load"], text = "Save Level")
+        self._windows["level_load"].saveButton = tk.Button(self._windows["level_load"], text = "Save Level", command=self.saveHandle)
         self._windows["level_load"].saveButton.grid( column = 2, row = 1, sticky = tk.N+tk.E+tk.W+tk.S)
         self._windows["level_load"].newButton = tk.Button(self._windows["level_load"], text = "New Level")
         self._windows["level_load"].newButton.grid( column = 3, row = 1, sticky = tk.N+tk.E+tk.W+tk.S)
@@ -130,13 +134,25 @@ class main :
         self.enemyListUpdate()
         print("done loading")
 
+    #saves current level state to file
+    def saveHandle(self) :
+        saveEnemiesToFile(self, self._currentEnemies)
+
     def drawCanvasForFrame(self) :
         currentCycle = self._currentCycle
         for i in self._frameCanvasElements :
             self._windows["level_view"].delete(i)
         self._frameCanvasElements.clear()
+        for i in self._windows["level_view"]._trails :
+            self._windows["level_view"].delete(i)
+        self._windows["level_view"]._trails.clear()
         for ent in self._currentEnemies :
             if ent._spawningCycle <= currentCycle and (ent._deathCycle + ent._spawningCycle) > currentCycle :
+                for i in range(0, len(ent._positionList), 30) :
+                    x = ent.pullPositionAtCycle(i)._x
+                    y = ent.pullPositionAtCycle(i)._y
+                    toPush = self._windows["level_view"].create_image( (x + 100)*self._gameScale, (y + 100)*self._gameScale, image = self._windows["level_view"]._trail)
+                    self._windows["level_view"]._trails.append(toPush)
                 if ent._animationName in self._animations :
                     x = ent.pullPositionAtCycle(currentCycle)._x
                     y = ent.pullPositionAtCycle(currentCycle)._y
@@ -150,7 +166,7 @@ class main :
         self._root.wait_window(pop._window)
         if pop.valid :
             enemy = pop.value
-            enemy.calculatePositions(self._maxCycles *300 + 10 - enemy._spawningCycle, self._playerPosition)
+            enemy.calculatePositions(self, self._playerPosition)
             self._currentEnemies.append(enemy)
             self.enemyListUpdate()
         else :

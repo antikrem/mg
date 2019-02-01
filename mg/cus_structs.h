@@ -54,8 +54,6 @@ struct CUS_Polar {
 	CUS_Polar operator*(const CUS_Polar& b);
 };
 
-//TODO::
-
 CUS_Polar toPolar(CUS_Point point);
 
 CUS_Point toPoint(CUS_Polar polar);

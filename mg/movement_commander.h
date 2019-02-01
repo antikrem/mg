@@ -45,6 +45,7 @@ protected:
 
 	//Position of the first master
 	CUS_Point lastMaster = { 0,0 };
+	CUS_Polar velocity = { 0,0 };
 
 	//Direction used for pointing
 	AngleState angleState = verticleAngle;
@@ -65,9 +66,9 @@ public:
 		this->position = position;
 	}
 
-	void setStartingVelocity(CUS_Point velocity) {
+	void setStartingVelocity(CUS_Polar velocity) {
 		this->velocity = velocity;
-		currentUpdate.angle = velocity.toPolarAngle();
+		currentUpdate.angle = velocity.angle;
 		if (angleState == velocityAngle) {
 			angle = currentUpdate.angle;
 		}
@@ -96,7 +97,7 @@ public:
 			}
 		}
 
-		auto tempVelocity = toPolar(velocity);
+		auto tempVelocity = velocity;
 		if (angleState == velocityAngle) {
 			angle = -tempVelocity.angle + 180;
 		} 
@@ -138,8 +139,8 @@ public:
 			
 		}
 
-		velocity = toPoint(tempVelocity);
-		position += velocity;
+		velocity = tempVelocity;
+		position += toPoint(velocity);
 
 		if (masterPosition) {
 			position = position - lastMaster;

@@ -38,7 +38,7 @@ protected:
 
 public:
 	EnemyEntity(int spawningCycle, string animationName, float hitbox, int health,
-		CUS_Point startingPosition, CUS_Point startingVelocity) {
+		CUS_Point startingPosition, CUS_Polar startingVelocity) {
 		this->spawningCycle = spawningCycle;
 
 		setAnimationSet( getFromStore(animationName) );

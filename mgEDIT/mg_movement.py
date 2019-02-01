@@ -2,6 +2,7 @@ from mg_cus_struct import *
 from mg_popup import *
 import tkinter as tk
 import sys
+import copy
 
 MOVEMENT_DEBUG = False
 
@@ -18,9 +19,6 @@ class MovementCommand(object) :
         self._forceSpeed = forceSpeed
         self._speed = speed
 
-        self._deathCycle = sys.maxsize
-        self._deathInitialised = False
-
 class MovementCommander(object) :
     def __init__(self, initialPosition, initialVelocity, spawningCycle) :
         self._spawningCycle = spawningCycle
@@ -30,16 +28,22 @@ class MovementCommander(object) :
         self._movementCommands = dict()
         self._currentMovementCommand = MovementCommand(True, False, False, 0, True, False, 0)
 
+        self._deathCycle = sys.maxsize
+        self._deathInitialised = False
+
+    def addStartingParameters(self, initialPosition, initialVelocity) :
+        self._initialPosition = initialPosition
+        self._initialVelocity = initialVelocity
+
     def addMovementCommand(self, cycle, ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed) :
         self._movementCommands[cycle] = MovementCommand(ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed)
-
+        
     #last cycle is the maximum possible cycle, usually    
     def calculatePositions(self, master, playerPosition) :
         self._positionList.clear()
-        position  =  self._initialPosition
-        velocity  =  self._initialVelocity
+        position  =  copy.deepcopy(self._initialPosition)
+        velocity  =  copy.deepcopy(self._initialVelocity)
         self._currentMovementCommand = MovementCommand(True, False, False, 0, True, False, 0)
-        temporaryVelocty = CUS_Polar(0,0)
 
         lastCycle = min(master._maxCycles *300 + 10 - self._spawningCycle, self._deathCycle)
         
@@ -55,28 +59,27 @@ class MovementCommander(object) :
                     self._currentMovementCommand._forceSpeed = self._movementCommands[i]._forceSpeed
                     self._currentMovementCommand._speed = self._movementCommands[i]._speed
 
-            temporaryVelocty = toPolar(velocity)
+            temporaryVelocty = velocity
             if not self._currentMovementCommand._ignoreSpeed :
                 if self._currentMovementCommand._forceSpeed :
-                    temporaryVelocty._magnitude = self._currentMovementCommand._speed
+                    velocity._magnitude = self._currentMovementCommand._speed
                 else :
-                    temporaryVelocty._magnitude += self._currentMovementCommand._speed
+                    velocity._magnitude += self._currentMovementCommand._speed
             if not self._currentMovementCommand._ignoreAngle :
                 if not self._currentMovementCommand._relativeToPlayer :
                     if self._currentMovementCommand._forceAngle :
-                        temporaryVelocty._angle = self._currentMovementCommand._angle
+                       velocty._angle = self._currentMovementCommand._angle
                     else :
-                        temporaryVelocty._angle += self._currentMovementCommand._angle
+                        velocity._angle += self._currentMovementCommand._angle
                 else :
                     if (self._currentMovementCommand._forceAngle) :
-                        temporaryVelocity.angle = position.getAngleToPoint(playerPosition) + self._currentMovementCommand._angle
+                        velocity.angle = position.getAngleToPoint(playerPosition) + self._currentMovementCommand._angle
                     else :
                         targetAngle = position.getAngleToPoint(playerPosition)
                         print("pls implement me")
                         #todo
             self._positionList.append(position)
-            velocity = toPoint(temporaryVelocty)
-            position = position.add(velocity)
+            position = position.add(toPoint(velocity))
 
         if MOVEMENT_DEBUG :
             for i in self._positionList :
@@ -122,7 +125,7 @@ class MovementCommandFrame(tk.Frame) :
             self._dontIgnoreSpeed.set(1)
         else :
             self._dontIgnoreSpeed.set(0)
-
+            
         self.setCheckBoxUpdate()
 
     def updateValues(self) :
@@ -151,8 +154,17 @@ class MovementCommandFrame(tk.Frame) :
             self._command._forceSpeed = 0
             self._command._speed = 0
 
+        del self._commander._movementCommands[self._cycle]
+        self._cycle = int(self._cycleEntry.get())
+        self._commander.addMovementCommand(self._cycle,
+                                           self._command._ignoreAngle, self._command._forceAngle,
+                                           self._command._relativeToPlayer, self._command._angle,
+                                           self._command._ignoreSpeed, self._command._forceSpeed,
+                                           self._command._speed)
+        
         self._commander.calculatePositions(self._master, self._master._playerPosition)
         self._master.enemyListUpdate()
+        self._master.drawCanvasForFrame();
     
     def __init__(self, master, rt, cycle, command, commander) :
         tk.Frame.__init__(self, rt,
@@ -206,7 +218,7 @@ class MovementCommandFrame(tk.Frame) :
         self._speedValue.insert(0, str(command._speed))
         self._speedValue.grid(row = 2, column = 5)
 
-        tk.Button(self, text = "Update", command = self.updateValues).grid(row=0, column=6, rowspan = 4)        
+        tk.Button(self, text = "Update", command = self.updateValues).grid(row=1, column=6)        
 
         self.setValues()
     
@@ -223,13 +235,53 @@ class EnemyFrame(tk.Frame) :
             messagebox.showerror("Error", "No animation selected")
 
     def updateValues(self) :
-        pass
+        self._enemy._spawningCycle = int(self._cycleNewGlobal.get())
+
+        self._enemy._hitpoints = int(self._hitpointEntry.get())
+        self._enemy._hitbox = float(self._hitboxEntry.get())
+
+        position = CUS_Point(float(self.__posX.get()), float(self.__posY.get()))
+        velocity = CUS_Polar(float(self.__velX.get()), float(self.__velY.get()))
+
+        self._enemy.addStartingParameters(position, velocity)
+
+        self._enemy.calculatePositions(self._master, self._master._playerPosition)
+        self._master.enemyListUpdate()
+        self._rt.drawFrame()
+        self._master.drawCanvasForFrame()
+
+    def fillValues(self) :
+        self._cycleNewGlobal.delete(0, tk.END)
+        self._cycleNewGlobal.insert(0, str(self._enemy._spawningCycle))
+        
+        self._animationEntry.delete(0, tk.END)
+        self._animationEntry.insert(0, str(self._enemy._animationName))
+
+        self._hitpointEntry.delete(0, tk.END)
+        self._hitpointEntry.insert(0, str(self._enemy._hitpoints))
+
+        self._hitboxEntry.delete(0, tk.END)
+        self._hitboxEntry.insert(0, str(self._enemy._hitbox))
+
+        self.__posX.delete(0, tk.END)
+        self.__posX.insert(0, self._enemy._initialPosition._x)
+
+        self.__posY.delete(0, tk.END)
+        self.__posY.insert(0, self._enemy._initialPosition._y)
+
+        self.__velX.delete(0, tk.END)
+        self.__velX.insert(0, self._enemy._initialVelocity._magnitude)
+        self.__velY.delete(0, tk.END)
+        self.__velY.insert(0, self._enemy._initialVelocity._angle)
+        
     
     def __init__(self, master, rt, enemy) :
         tk.Frame.__init__(self, rt,
                           highlightbackground = "blue", highlightcolor = "blue",
                           highlightthickness=1, width = 626 * master._scale, bd = 0, height = 93)
         self._master = master
+        self._enemy = enemy
+        self._rt = rt
         self._cycleLabel =  tk.Label(self, text = "SPAWN Cycle: 0")
         self._cycleLabel.grid(row = 0, column = 0)
 
@@ -237,48 +289,41 @@ class EnemyFrame(tk.Frame) :
         
         self._cycleNewGlobal = tk.Entry(self)
         self._cycleNewGlobal.grid(row = 0, column = 1)
-        self._cycleNewGlobal.insert(0, str(enemy._spawningCycle))
+        
 
         tk.Label(self, text = " Using animation: ").grid(row = 0, column = 3)
         self._animationEntry = tk.Entry(self)
         self._animationEntry.grid(row = 0, column = 4)
-        self._animationEntry.insert(0, str(enemy._animationName))
 
         (tk.Button(self, text="...", command=self.handleAnimation)).grid(row = 0, column = 5)
 
         tk.Label(self, text = "HitPoints: ").grid(row = 1, column = 0)
         self._hitpointEntry = tk.Entry(self)
         self._hitpointEntry.grid(row=1, column=1)
-        self._hitpointEntry.delete(0, tk.END)
-        self._hitpointEntry.insert(0, str(enemy._hitpoints))
         
         tk.Label(self, text = "HitBox: ").grid(row = 1, column = 3)
         self._hitboxEntry = tk.Entry(self)
         self._hitboxEntry.grid(row=1, column=4)
-        self._hitboxEntry.delete(0, tk.END)
-        self._hitboxEntry.insert(0, str(enemy._hitbox))
 
         (tk.Label(self, text = "Starting Pos:")).grid(row=2, column=0)
         self.__posX = tk.Entry(self)
-        self.__posX.insert(0, enemy._initialPosition._x)
         self.__posX.grid(row=2, column=1)
         (tk.Label(self, text = "X")).grid(row=2, column=2)
         self.__posY = tk.Entry(self)
-        self.__posY.insert(0, enemy._initialPosition._y)
         self.__posY.grid(row=3, column=1)
         (tk.Label(self, text = "Y")).grid(row=3, column=2)
 
         (tk.Label(self, text = "Starting Vel:")).grid(row=2, column=3)
         self.__velX = tk.Entry(self)
-        self.__velX.insert(0, enemy._initialVelocity._x)
         self.__velX.grid(row=2, column=4)
-        (tk.Label(self, text = "X")).grid(row=2, column=5)
+        (tk.Label(self, text = "Magnitude")).grid(row=2, column=5)
         self.__velY = tk.Entry(self)
-        self.__velY.insert(0, enemy._initialVelocity._y)
         self.__velY.grid(row=3, column=4)
-        tk.Label(self, text = "Y").grid(row=3, column=5)
+        tk.Label(self, text = "Angle").grid(row=3, column=5)
 
-        tk.Button(self, text = "Update", command = self.updateValues).grid(row=0, column=6, rowspan = 4)
+        tk.Button(self, text = "Update", command = self.updateValues).grid(row=0, column=6)
+
+        self.fillValues()
 
 class DeathFrame(tk.Frame) :
     def setValues(self) :
@@ -296,9 +341,13 @@ class DeathFrame(tk.Frame) :
 
     def update(self) :
         self._enemy._deathCycle = int(self._cycleDeathEntry.get())
+        self._enemy._deathInitialised = True
         self._enemy.calculatePositions(self._master, self._master._playerPosition)
         self.setValues()
         self._master.enemyListUpdate()
+        self._master.drawCanvasForFrame()
+        self._rt.drawFrame()
+        
     
     def __init__(self, master, rt, enemy) :
         tk.Frame.__init__(self, rt,
@@ -306,6 +355,7 @@ class DeathFrame(tk.Frame) :
                           highlightthickness=1, width = 626 * master._scale, bd = 0, height = 30)
         self._master = master
         self._enemy = enemy
+        self._rt = rt
         
         tk.Label(self, text = "DEATH Cycle: ").grid(row = 0, column = 0)
 
@@ -323,10 +373,45 @@ class DeathFrame(tk.Frame) :
         tk.Button(self, text="Update", command=self.update).grid(row = 0, column = 6)
 
         self.setValues()
+
+class SpawnNewFrame(tk.Frame) :
+    def newCommand(self) :
+        pass
+    
+    def __init__(self, rt, enemy) :
+        self._enemy = enemy
+        self._rt = rt
+
+        tk.Label(self, text = "No Commander Selected").grid(row = 0, column = 0)
+        tk.Label(self, text = "No Commander Selected").grid(row = 0, column = 1)
+        tk.Button(self, text="Update", command=self.newCommand).grid(row = 0, column = 2)
+        
         
 #Whats usually on the right side of the screen that describes current movement commander
 #Gets called everytime a new enemy comes into focus
-class MovementCommanderFrame(tk.Frame) :
+class MovementCommanderFrame(tk.Frame) :    
+    def drawFrame(self) :
+        for i in self._commandFrames :
+            i.destroy()
+        if self._commander is None :
+            tk.Label(self, text = "No Commander Selected").grid(column = 0, row = 0)
+        else :
+            commandFrame = EnemyFrame(self._master, self, self._commander)
+            commandFrame.grid(column = 0, row = 0)
+            self._commandFrames.append(commandFrame)
+            j = 1
+            for i in sorted(self._commander._movementCommands.keys()) :
+                commandFrame = MovementCommandFrame(self._master, self, i,
+                                                    self._commander._movementCommands[i], self._commander)
+                commandFrame.grid(column = 0, row = j)
+                self._commandFrames.append(commandFrame)
+                j = j + 1
+            commandFrame = DeathFrame(self._master, self, self._commander)
+            commandFrame.grid(column = 0, row = j)
+            self._commandFrames.append(commandFrame)
+            j = j + 1
+
+                    
     def __init__(self, master, commander) :
         self._master = master
         tk.Frame.__init__(self, master._windows["commander"],
@@ -336,22 +421,7 @@ class MovementCommanderFrame(tk.Frame) :
         
         self._commander = commander
         self._commandFrames = []
+        self.drawFrame()
+        
 
-        if commander is None :
-            tk.Label(self, text = "No Commander Selected").grid(column = 0, row = 0)
-        else :
-            print(len(commander._movementCommands))
-            commandFrame = EnemyFrame(master, self, commander)
-            commandFrame.grid_propagate(0)
-            commandFrame.grid(column = 0, row = 0)
-            j = 0
-            for i in commander._movementCommands :
-                j = j + 1
-                commandFrame = MovementCommandFrame(master, self, i, commander._movementCommands[i], commander)
-                commandFrame.grid_propagate(0)
-                commandFrame.grid(column = 0, row = j)
-                self._commandFrames.append(commandFrame)
-            j = j + 1
-            commandFrame = DeathFrame(master, self, commander)
-            commandFrame.grid_propagate(0)
-            commandFrame.grid(column = 0, row = j)
+        

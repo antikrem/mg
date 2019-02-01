@@ -91,10 +91,17 @@ CUS_Point CUS_Polar::toPoint() {
 CUS_Polar CUS_Polar::operator+(const CUS_Polar& in) {
 	CUS_Point a = this->toPoint();
 
-	CUS_Polar temp = in;
-	CUS_Point b = temp.toPoint();
+	CUS_Polar temp1 = in;
+	CUS_Point b = temp1.toPoint();
 
-	return { (a + b).toPolarMagnitude(), (a + b).toPolarAngle() };
+	//catch special case where magnitude zeros out
+	//In such cases, angle will default to this->angle
+	CUS_Polar temp = { (a + b).toPolarMagnitude(), (a + b).toPolarAngle() };
+	if (temp.magnitude = 0) {
+		temp.angle = this->angle;
+	}
+
+	return temp;
 }
 
 void CUS_Polar::operator+=(const CUS_Polar& in) {
@@ -106,7 +113,10 @@ void CUS_Polar::operator+=(const CUS_Polar& in) {
 	a += b;
 
 	this->magnitude = a.toPolarMagnitude();
-	this->angle = a.toPolarAngle();
+	if (this->magnitude) {
+		this->angle = a.toPolarAngle();
+	}
+	
 }
 
 CUS_Polar CUS_Polar::operator*(const float& b) {
