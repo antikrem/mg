@@ -18,6 +18,7 @@ class main :
         #Animation set
         self._animations = dict()
         self._currentEnemies = []
+        self._currentBullets = []
         #reference to frame canvas elements, for easy clear from clearCanvas()
         self._frameCanvasElements = []
 
@@ -127,8 +128,11 @@ class main :
         self._root.wait_window(pop._window)
         path = self._pathToMaster + "//campaigns//" + self._campaign + "//" + str(self._level) + "//enemy_table.txt"
         self._currentEnemies = makeListOfEnemiesFromFile(path)
+        self._bulletTemplates = pullBulletMasterTemplatesFromFile(self)
         for ent in self._currentEnemies :
-            ent.calculatePositions(self, self._playerPosition)
+            ent.calculatePositions(self, self._playerPosition, None, None)
+            self._currentBullets.extend(ent.calculateBulletMaster(self._bulletTemplates, self))
+            
         self._animations.update(loadAnimations(self._pathToMaster + "campaigns\\" + self._campaign + "\\" + str(self._level) + "\\", "local_load.txt", ImageLevel.LOCAL, self))
         self.updateCampaignLevelLabel()
         self.enemyListUpdate()
@@ -148,6 +152,7 @@ class main :
         self._windows["level_view"]._trails.clear()
         for ent in self._currentEnemies :
             if ent._spawningCycle <= currentCycle and (ent._deathCycle + ent._spawningCycle) > currentCycle :
+                #draw trail
                 for i in range(0, len(ent._positionList), 30) :
                     x = ent.pullPositionAtCycle(i)._x
                     y = ent.pullPositionAtCycle(i)._y
@@ -160,6 +165,18 @@ class main :
                     image = frameList[(self._currentCycle-ent._spawningCycle)%len(frameList)]
                     toPush = self._windows["level_view"].create_image( (x + 100)*self._gameScale, (y + 100)*self._gameScale, image = image)
                     self._frameCanvasElements.append(toPush)
+
+        for ent in self._currentBullets :
+            if ent._spawningCycle <= currentCycle and (ent._deathCycle + ent._spawningCycle) > currentCycle :
+                if ent._animationName in self._animations :
+                    x = ent.pullPositionAtCycle(currentCycle)._x
+                    y = ent.pullPositionAtCycle(currentCycle)._y
+                    frameList = self._animations[ent._animationName].getAnimation("idle")._drawFrames
+                    image = frameList[(self._currentCycle-ent._spawningCycle)%len(frameList)]
+                    toPush = self._windows["level_view"].create_image( (x + 100)*self._gameScale, (y + 100)*self._gameScale, image = image)
+                    self._frameCanvasElements.append(toPush)
+
+            
 
     def spawnHandle(self) :
         pop = PopEnemy(self)
@@ -230,5 +247,5 @@ if __name__ == "__main__":
     m.initialise()
     m.bindEvents()
     m.mainloop()
-    print("nice")
+    print("safe exit")
     

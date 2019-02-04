@@ -9,6 +9,9 @@ class CUS_Point(object) :
     def add(self, point) :
         return CUS_Point(self._x+point._x, self._y+point._y)
 
+    def minus(self, point) :
+        return CUS_Point(self._x-point._x, self._y-point._y)
+
     def __str__(self) :
         return str(self._x) + " " + str(self._y)
 
@@ -22,8 +25,8 @@ class CUS_Polar :
 
     def __str__(self) :
         point = CUS_Point(0,0)
-        point._x = polar._magnitude * sin(polar._angle * pi / 180.0)
-        point._y = polar._magnitude * cos(polar._angle * pi / 180.0)
+        point._x = self._magnitude * sin(self._angle * pi / 180.0)
+        point._y = self._magnitude * cos(self._angle * pi / 180.0)
         return str(point._x) + " " + str(point._y)
 
 #Angle is referenced from north, positive clockwise

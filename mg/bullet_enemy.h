@@ -154,7 +154,6 @@ enum BulletSpawnerMode {
 class BulletSpawner : public MovementCommander {
 private:
 	int internalCounter = 0;
-	int switchTimer = 0;
 
 	float displacement;
 	vector<float> exitLocations;
@@ -324,8 +323,6 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 		}
 		else if (lineVec[0] == "SPAWNER") {
 			if (lineVec.size() == 5) {
-
-				mode = bst;
 				if (bmtToPull) {
 					bstToPull = new BulletSpawnerTemplate({ stof(lineVec[1]), stof(lineVec[2]) }, { stof(lineVec[3]), stof(lineVec[4]) });
 					if (btToPull) {
@@ -333,7 +330,7 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 					}
 					bmtToPull->addBulletSpawnerTemplate(bstToPull);
 				}
-
+				mode = bst;
 			}
 		}
 		else if (lineVec[0] == "VOLLEYTIMER") {
@@ -386,7 +383,7 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 				stoi(lineVec[2]),
 				stoi(lineVec[3]),
 				stoi(lineVec[4]),
-				stoi(lineVec[3]) ? -1 * stof(lineVec[5]) + 180 : stof(lineVec[5]),
+				stof(lineVec[3]) ? -1 * stof(lineVec[5]) + 180 : stof(lineVec[5]),
 				stoi(lineVec[6]),
 				stoi(lineVec[7]),
 				stof(lineVec[8])

@@ -1,4 +1,6 @@
 from mg_ent_classes import *
+from mg_bullet import *
+from mg_movement import *
 from os import path
 #from mg_popup import *
 import tkinter as tk
@@ -71,7 +73,99 @@ def saveEnemiesToFile(master, enemyList) :
                                                       float(command._angle),
                                                       int(command._ignoreSpeed), int(command._forceSpeed), float(command._speed))
                       )
-        file.write("DEATH %d\n\n"%(i._deathCycle))
+            file.write("DEATH %d\n"%(i._deathCycle))
+            file.write("\n")
 
 def enemySort(enemy) :
     return enemy._spawningCycle
+
+def pullBulletMasterTemplatesFromFile(master) :
+    path = master._pathToMaster + "//campaigns//" + master._campaign + "//" + str(master._level) + "//bullet_table.txt"
+
+    bmtToPull = None
+    bstToPull = None
+    btToPull = None
+    mode = "nobt"
+
+    masterDict = dict()
+    
+    with open(path, "r") as file :
+        lines = file.readlines()
+        lines = [line.strip() for line in lines]
+
+        lineNo = 0
+        for line in lines :
+            lineNo+=1
+            currentLine = line.split(' ')
+            print(currentLine)
+            if currentLine[0] == "BULLETMASTER" :
+                if bmtToPull is not None :
+                    masterDict[bmtToPull._name] = bmtToPull
+                    bstToPull = None
+                    btToPull = None
+                mode = "bmt"
+                bmtToPull = BulletMasterTemplate(currentLine[1])
+                
+            elif currentLine[0] == "SPAWNER" :
+                if (bmtToPull is not None) :
+                    position = CUS_Point(float(currentLine[1]), float(currentLine[2]))
+                    velocity = CUS_Polar(float(currentLine[3]), float(currentLine[4]))
+                    bstToPull = BulletSpawnerTemplate(position, velocity)
+                    if btToPull is not None :
+                        bstToPull.addBulletTemplate(btToPull)
+                    bmtToPull.addBulletSpawnerTemplates(bstToPull)
+                    mode = "bst"
+                    
+            elif currentLine[0] == "VOLLEYTIMER" :
+                if mode == "bst" :
+                    sprayTimer = []
+                    for i in range(1, len(currentLine)) :
+                        sprayTimer.append(int(currentLine[i]))
+                    bstToPull.addSprayTimer(sprayTimer)
+                    
+            elif currentLine[0] == "BETWEENVOLLYPAUSE" :
+                if mode == "bst" :
+                    bstToPull.setInBetweenTimer(int(currentLine[1]))
+
+            elif currentLine[0] == "ROUNDS" :
+                if mode == "bst" :
+                    bstToPull.setRounds(int(currentLine[1]))
+                
+            elif currentLine[0] == "EXIT" :
+                if mode == "bst" :
+                    sprayTimer = []
+                    for i in range(1, len(currentLine)) :
+                        bstToPull.addExitLocation(float(currentLine[i]))
+                        
+            elif currentLine[0] == "BULLET" :
+                mode = "bt"
+                velocity = CUS_Polar(float(currentLine[2]), float(currentLine[3]))
+                btToPull = BulletTemplate(currentLine[1], velocity)
+
+            elif currentLine[0] == "MOVE" :
+                currentUpdate = MovementCommand(
+                    int(currentLine[2]),
+                    int(currentLine[3]),
+                    int(currentLine[4]),
+                    float(currentLine[5]),
+                    int(currentLine[6]),
+                    int(currentLine[7]),
+                    float(currentLine[8])
+                    )
+
+                if mode == "bst" :
+                    bstToPull.addMovementCommand(int(currentLine[1]), currentUpdate)
+                elif mode == "bt" :
+                    btToPull.addMovementCommand(int(currentLine[1]), currentUpdate)
+            else :
+                print("error")
+                print(currentLine)
+
+        masterDict[bmtToPull._name] = bmtToPull
+
+    return masterDict
+
+
+
+        
+        

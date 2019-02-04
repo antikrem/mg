@@ -70,7 +70,6 @@ public:
 		if (bmtName != "") {
 			if (bmtDelay == internalCycle) {
 				bulletMaster = make_unique<BulletMaster>( (*bmtList)[bmtName], position );
-				cout << "caught" << endl;
 			}
 		}
 		vector<shared_ptr<Bullet>> returnList;

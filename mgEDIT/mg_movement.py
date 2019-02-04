@@ -37,15 +37,23 @@ class MovementCommander(object) :
 
     def addMovementCommand(self, cycle, ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed) :
         self._movementCommands[cycle] = MovementCommand(ignoreAngle, forceAngle, relativeToPlayer, angle, ignoreSpeed, forceSpeed, speed)
-        
+
+    def addMovementCommandDirect(self, cycle, command) :
+        self._movementCommands[cycle] = command
+    
     #last cycle is the maximum possible cycle, usually    
-    def calculatePositions(self, master, playerPosition) :
+    def calculatePositions(self, master, playerPosition, deleteBox, masterPositions) :
         self._positionList.clear()
         position  =  copy.deepcopy(self._initialPosition)
         velocity  =  copy.deepcopy(self._initialVelocity)
         self._currentMovementCommand = MovementCommand(True, False, False, 0, True, False, 0)
 
-        lastCycle = min(master._maxCycles *300 + 10 - self._spawningCycle, self._deathCycle)
+        masterLen = sys.maxsize
+        if masterPositions is not None :
+            masterLen = len(masterPositions)
+            self._deathCycle = len(masterPositions) + self._spawningCycle            
+
+        lastCycle = min(master._maxCycles *300 + 10 - self._spawningCycle, self._deathCycle, masterLen)
         
         for i in range(0,lastCycle) :
             if i in self._movementCommands :
@@ -59,7 +67,6 @@ class MovementCommander(object) :
                     self._currentMovementCommand._forceSpeed = self._movementCommands[i]._forceSpeed
                     self._currentMovementCommand._speed = self._movementCommands[i]._speed
 
-            temporaryVelocty = velocity
             if not self._currentMovementCommand._ignoreSpeed :
                 if self._currentMovementCommand._forceSpeed :
                     velocity._magnitude = self._currentMovementCommand._speed
@@ -78,8 +85,21 @@ class MovementCommander(object) :
                         targetAngle = position.getAngleToPoint(playerPosition)
                         print("pls implement me")
                         #todo
-            self._positionList.append(position)
+            if masterPositions is not None :
+                newPosition = CUS_Point(position._x, position._y)
+                newPosition._x = newPosition._x + masterPositions[i]._x
+                newPosition._y = newPosition._y + masterPositions[i]._y
+                self._positionList.append(newPosition)
+            else :   
+                self._positionList.append(position)
+                
             position = position.add(toPoint(velocity))
+
+            if deleteBox is not None :
+                if position._x < deleteBox[0] or position._x > deleteBox[2] or position._y < deleteBox[1] or position._y > deleteBox[3] :
+                    self._deathCycle = i
+                    break
+                    
 
         if MOVEMENT_DEBUG :
             for i in self._positionList :
@@ -162,7 +182,7 @@ class MovementCommandFrame(tk.Frame) :
                                            self._command._ignoreSpeed, self._command._forceSpeed,
                                            self._command._speed)
         
-        self._commander.calculatePositions(self._master, self._master._playerPosition)
+        self._commander.calculatePositions(self._master, self._master._playerPosition, None, None)
         self._master.enemyListUpdate()
         self._master.drawCanvasForFrame();
     
@@ -245,7 +265,7 @@ class EnemyFrame(tk.Frame) :
 
         self._enemy.addStartingParameters(position, velocity)
 
-        self._enemy.calculatePositions(self._master, self._master._playerPosition)
+        self._enemy.calculatePositions(self._master, self._master._playerPosition, None, None)
         self._master.enemyListUpdate()
         self._rt.drawFrame()
         self._master.drawCanvasForFrame()
@@ -342,7 +362,7 @@ class DeathFrame(tk.Frame) :
     def update(self) :
         self._enemy._deathCycle = int(self._cycleDeathEntry.get())
         self._enemy._deathInitialised = True
-        self._enemy.calculatePositions(self._master, self._master._playerPosition)
+        self._enemy.calculatePositions(self._master, self._master._playerPosition, None, None)
         self.setValues()
         self._master.enemyListUpdate()
         self._master.drawCanvasForFrame()

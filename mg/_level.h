@@ -522,6 +522,9 @@ private:
 
 		//update enemies
 		enemyEntities.lock();
+		if (enemyEntities.size() > 1) {
+			cout << "WHAT" << endl;
+		}
 		for (auto i : enemyEntities.getEntList()) {
 			pullBack = i->update(player->getPosition(), &BulletMasterTemplatePool);
 			//If bullets were pulled, chuck it on the master list
