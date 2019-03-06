@@ -34,7 +34,7 @@ protected:
 
 	string bmtName = "";
 	int bmtDelay = 0;
-	unique_ptr< BulletMaster> bulletMaster = NULL;
+	BulletMaster* bulletMaster = NULL;
 
 public:
 	EnemyEntity(int spawningCycle, string animationName, float hitbox, int health,
@@ -54,10 +54,11 @@ public:
 	}
 
 	~EnemyEntity() {
+		delete bulletMaster;
 	}
 
 	//Returns bullets spawned
-	vector<shared_ptr<Bullet>> update(CUS_Point playerPosition, map<string, BulletMasterTemplate*>* bmtList) {
+	vector<shared_ptr<Bullet>> update(CUS_Point playerPosition, map<string, BulletMasterTemplate*>* bmtList, SharedEntityList<BulletSpawner>* spawnerMasterList) {
 		internalCycle++;
 		itCurrentFrame();
 		updateMovement(playerPosition, NULL);
@@ -69,7 +70,8 @@ public:
 		//Check bullets
 		if (bmtName != "") {
 			if (bmtDelay == internalCycle) {
-				bulletMaster = make_unique<BulletMaster>( (*bmtList)[bmtName], position );
+				bulletMaster = new BulletMaster( (*bmtList)[bmtName], position );
+				bulletMaster->addToMasterBulletSpawnerList(spawnerMasterList);
 			}
 		}
 		vector<shared_ptr<Bullet>> returnList;
@@ -80,7 +82,7 @@ public:
 	}
 
 	BulletMaster* getBMT() {
-		return bulletMaster.get();
+		return bulletMaster;
 	}
 
 	int getSpawningCycle() {

@@ -40,22 +40,24 @@ protected:
 	int currentNumberFrame = 0;
 	int skippingFrame = 0;
 
-	AnimationAssignment* animationSet;
+	AnimationAssignment* animationSet = NULL;
 	/*Currently played animation*/
 	AnimationType currentFrameType = idle;
 	/*Animation to play on fail, or if current animation ends*/
 	AnimationType backupFrameType = idle;
 
-	void updateBox();
+	/*updates box, where the box gets rendered*/
+	void updateBox(bool supressError = true);
 
 	/*Go to next frame*/
 	void itCurrentFrame();
 
 	//plays the new animation, returning to backupFrameType after the animation
-	void playAnimation(AnimationType newAnimation);
+	//when fed supress = true, no error will occur when playAnimation fails, and no effect will occur
+	void playAnimation(AnimationType newAnimation, bool suppress = false);
 
 	//plays the new animation until a new animation is set
-	void switchAnimation(AnimationType newAnimation);
+	void switchAnimation(AnimationType newAnimation, bool suppress = false);
 
 public:
 	void setAnimationSet(AnimationAssignment* animation_map_param);

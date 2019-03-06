@@ -18,6 +18,10 @@ namespace str_kit {
 
 	/*Takes a float and formats it to score string: XX.XX% or XXX.XX%*/
 	string convertToScoreString(float value, bool whole);
+	
+	/*Takes a string and replaces all instances token with insert */
+	string replaceToken(string str, string token, string replacement);
+	
 }
 
 #endif

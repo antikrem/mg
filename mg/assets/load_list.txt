@@ -3,6 +3,14 @@
 //Characters
 default_player
 entity_sprites\\player\\defsprite.png idle 70 20
+//entity_sprites\\player\\shovel.png idle 408 20
+entity_sprites\\player\\defspriteleft.png move_left 70 20
+entity_sprites\\player\\defspriteright.png move_right 70 20
+
+
+
+default_player_lighting
+entity_sprites\\player\\defspritelighting.png idle 210 20
 
 fire_circle
 entity_sprites\\player\\anon_ents\\fire_circle.png idle 46 20
@@ -14,3 +22,7 @@ bullet_sprites\\player\\bullet_spr.png idle 16 20
 //PowerUps
 base_powerup
 power_ups//base.png idle 40 20
+
+//throwaway
+tower
+tower.png idle 500 20

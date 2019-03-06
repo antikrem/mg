@@ -212,6 +212,16 @@ public:
 		return noBoxes;
 	}
 
+	//kills all entities and clears list
+	void deepClear() {
+		lock();
+		for (auto i : entList) {
+			i->setFlag(false);
+		}
+		unlock();
+		cleanDeathFlags();
+	}
+
 
 	//Draw hitboxes
 	int renderHitBoxes(bool render, GraphicsState* gState, SDL_Texture* hitboxTex, int shift) {

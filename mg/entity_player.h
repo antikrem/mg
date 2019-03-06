@@ -38,6 +38,9 @@ To be used only in _level.h*/
 #define GRACED_RAGE_DRAIN F(0.2)
 #define GRACED_RAGE_DRAIN_SHIFT F(0.05)
 
+//cutoffs for velocity affecting animation
+#define VELOCITY_ANIMATION_CUTOFF F(0.05)
+
 static float edgeHitPower(float currentPower, float rage) {
 	float temp = BASE_POWER_BUILD * (1 - (currentPower / MAX_POWER)) * (1 / (3*(rage/ MAX_RAGE)+1));
 	if ((currentPower + temp) > 120)
@@ -191,6 +194,14 @@ public:
 			}
 
 			velocity = tempVelocity.toPoint();
+
+			//resolve velocity into animation
+			if (velocity.x > VELOCITY_ANIMATION_CUTOFF)
+				switchAnimation(move_right, true);
+			else if (velocity.x < -1 * VELOCITY_ANIMATION_CUTOFF)
+				switchAnimation(move_left, true);
+			else
+				switchAnimation(idle, true);
 
 			position += velocity;
 

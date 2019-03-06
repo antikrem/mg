@@ -39,7 +39,7 @@ private:
 	int planeAccelerationCycles = 0;
 
 	//Speed of wind, used for particles and weather
-	CUS_Polar baseWindSpeed = { 0.1f, 90 };
+	CUS_Polar baseWindSpeed = { 0.4f, 90 };
 	CUS_Polar burstWindSpeed = { 0, 0 };
 	CUS_Polar windSpeed = { 0, 0 };
 	//list of possible bursts
@@ -96,6 +96,8 @@ private:
 	vector<EnemyEntity*> upcomingEnemyList;
 	SharedEntityList<EnemyEntity> enemyEntities;
 
+	//Additional reference for spawner
+	SharedEntityList<BulletSpawner> totalSpawnerList;
 	//Total bullet list
 	SharedEntityList<Bullet> totalBulletList;
 
@@ -110,6 +112,19 @@ private:
 
 	//Overlay Texture
 	SDL_Texture* overlay = NULL;
+	//Cross for power UI, 0 is grey, 1 is coloured, 2 is border
+	SDL_Texture* cross[3] = { NULL, NULL, NULL };
+	const SDL_Rect crossDraw = { 1292, 191, 236, 368 };
+
+	//circle for power UI, 0 is inner, 1 is middle, 2 is outer
+	SDL_Texture* powerCircle[3] = { NULL, NULL, NULL };
+	SDL_Texture* powerCircleDark[3] = { NULL, NULL, NULL };
+	float circleSpin[3] = { 0,0,0 };
+	const SDL_Rect powerCircleDraw = { 1320, 208, 181, 181 };
+
+	//power box border
+	SDL_Texture* powerBoxBackground = NULL;
+	const SDL_Rect powerBoxBackgroundDraw = { 1260, 76, 590, 838 };
 
 	//Circle texture for hitbox rendering
 	SDL_Texture* hitBoxSizeTexture = NULL;
@@ -282,6 +297,100 @@ private:
 		}
 	}
 
+	//Draws ui elements from overlay to dialogue
+	void drawUI() {
+		//draw powerbox background
+		SDL_RenderCopy(graphicsState->getGRenderer(), powerBoxBackground, NULL, &powerBoxBackgroundDraw);
+
+		//Draw overlay
+		SDL_RenderCopy(graphicsState->getGRenderer(), overlay, NULL, NULL);
+
+		//draw power circles
+		player->unlock();
+		float power = player->getPower();
+		player->lock();
+
+		float baseRotationSpeed = power > 33 ? (power > 66 ? 2.0f : 1.0f) : 0.5f;
+		if (power > 33) {
+			SDL_RenderCopyEx(graphicsState->getGRenderer(), powerCircle[0], NULL, &powerCircleDraw, circleSpin[0], NULL, SDL_FLIP_NONE);
+			circleSpin[0] += 0.75f*baseRotationSpeed;
+		}
+		else {
+			SDL_RenderCopyEx(graphicsState->getGRenderer(), powerCircleDark[0], NULL, &powerCircleDraw, circleSpin[0], NULL, SDL_FLIP_NONE);
+			circleSpin[0] += 0.1f;
+		}
+		if (power > 66) {
+			SDL_RenderCopyEx(graphicsState->getGRenderer(), powerCircle[1], NULL, &powerCircleDraw, circleSpin[1], NULL, SDL_FLIP_NONE);
+			circleSpin[1] -= 0.6f*baseRotationSpeed;
+		}
+		else {
+			SDL_RenderCopyEx(graphicsState->getGRenderer(), powerCircleDark[1], NULL, &powerCircleDraw, circleSpin[1], NULL, SDL_FLIP_NONE);
+			circleSpin[1] -= 0.05f;
+		}
+		if (power > 100) {
+			SDL_RenderCopyEx(graphicsState->getGRenderer(), powerCircle[2], NULL, &powerCircleDraw, circleSpin[2], NULL, SDL_FLIP_NONE);
+			circleSpin[2] -= 0.9f*baseRotationSpeed;
+		}
+		else {
+			SDL_RenderCopyEx(graphicsState->getGRenderer(), powerCircleDark[2], NULL, &powerCircleDraw, circleSpin[2], NULL, SDL_FLIP_NONE);
+			circleSpin[2] -= 0.075f;
+		}
+		
+		//Draw cross
+		SDL_RenderCopy(graphicsState->getGRenderer(), cross[0], NULL, &crossDraw);
+		//calculate power coloured box
+		SDL_Rect colouredBoxDst = crossDraw;
+		power = power / 100;
+		if (power <= 1.0f) {
+			colouredBoxDst.y += (int)(F(colouredBoxDst.h) * (1-power));
+			colouredBoxDst.h = (int)(F(colouredBoxDst.h) * power);
+		}
+		SDL_Rect colouredBoxSrc = { 0,0,236,368 };
+		if (power <= 1.0f) {
+			colouredBoxSrc.y = (int)(F(colouredBoxSrc.h) * (1 - power));
+			colouredBoxSrc.h = (int)(F(colouredBoxSrc.h) * power);
+		}
+
+		SDL_RenderCopy(graphicsState->getGRenderer(), cross[1], &colouredBoxSrc, &colouredBoxDst);
+		SDL_RenderCopy(graphicsState->getGRenderer(), cross[2], NULL, &crossDraw);
+
+		//draw ui text
+		uiTextMaster->renderText(0);
+
+		//Draw dialogue
+		dialogue->drawDialogue();
+	}
+
+	void loadUI() {
+		SDL_Surface* tempSurf = IMG_Load("assets//UI//overlay.png");
+		overlay = pullTextureFromPath("assets//UI//overlay.png", graphicsState);
+
+		powerBoxBackground = pullTextureFromPath("assets//UI//powerbox_background.png", graphicsState);
+		
+		cross[2] = pullTextureFromPath("assets//UI//cross.png", graphicsState);
+		cross[1] = pullTextureFromPath("assets//UI//cross1.png", graphicsState);
+		cross[0] = pullTextureFromPath("assets//UI//cross2.png", graphicsState);
+
+		powerCircle[0] = pullTextureFromPath("assets//UI//circle_inner.png", graphicsState);
+		powerCircle[1] = pullTextureFromPath("assets//UI//circle_middle.png", graphicsState);
+		powerCircle[2] = pullTextureFromPath("assets//UI//circle_outer.png", graphicsState);
+
+		powerCircleDark[0] = pullTextureFromPath("assets//UI//circle_inner_dark.png", graphicsState);
+		powerCircleDark[1] = pullTextureFromPath("assets//UI//circle_middle_dark.png", graphicsState);
+		powerCircleDark[2] = pullTextureFromPath("assets//UI//circle_outer_dark.png", graphicsState);
+	}
+
+	void freeUI() {
+		SDL_DestroyTexture(overlay);
+		SDL_DestroyTexture(powerBoxBackground);
+		for (int i = 0; i < 3; i++) {
+			SDL_DestroyTexture(cross[i]);
+		}
+		for (int i = 0; i < 3; i++) {
+			SDL_DestroyTexture(powerCircle[i]);
+		}
+	}
+
 	void initialise() {
 		//Load local store
 		loadStoreLocal(graphicsState->getGRenderer(), levelSettingsCurrent, false);
@@ -306,17 +415,14 @@ private:
 
 		//Initialise float text container
 		floatTextMaster = new TextMaster(textGlobalMaster);
+
+		//Initialise ui text container
 		uiTextMaster = new TextMaster(textGlobalMaster);
 		uiTextMaster->addTextEnt("power", "00.00%", { 1409, 595 }, 56, sansFontStyle, whiteFontColor, midMid, 0, true);
 		uiTextMaster->addTextEnt("rage", "00.00%", { 1699, 595 }, 56, sansFontStyle, whiteFontColor, midMid, 0, true);
 
 		//Load overlay
-		SDL_Surface* overlaySurf = IMG_Load("assets//UI//overlay.png");
-		overlay = SDL_CreateTextureFromSurface(graphicsState->getGRenderer(), overlaySurf);
-		if (!overlay) {
-			err::logMessage("Overlay file corrupted or missing, check assets//UI//overlay.bmp, or reinstall");
-		}
-		SDL_FreeSurface(overlaySurf);
+		loadUI();
 
 		//Load bullets
 		pullBMT(&BulletMasterTemplatePool, levelSettingsCurrent);
@@ -327,13 +433,7 @@ private:
 		for (auto enemy : tempEnemyList)
 			upcomingEnemyList.push_back(enemy);
 
-		particleMaster->spawnParticle({ 500,500 }, { 0,0 }, particle_gold);
-		particleMaster->spawnParticle({ 600,400 }, { 0,0 }, particle_gold);
-		particleMaster->spawnParticle({ 700,300 }, { 0,0 }, particle_gold);
-		particleMaster->spawnParticle({ 800,200 }, { 0,0 }, particle_gold);
-		particleMaster->spawnParticle({ 900,100 }, { 0,0 }, particle_gold);
-
-		//load music
+		//load sound subsystem
 		loadSoundAndMusic(levelSettingsCurrent);
 
 		//Load command list
@@ -363,13 +463,44 @@ private:
 		dialogue = NULL;
 
 		clearLocalAnimaionStore();
-		SDL_DestroyTexture(overlay);
 
 		if (hitBoxSizeTexture)
 			SDL_DestroyTexture(hitBoxSizeTexture);
 	}
 
 	void computeCycle() {
+		if (cycle % 100 == 0) {
+			particleMaster->spawnParticle({ 500,500 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 600,500 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 700,500 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 800,500 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 900,500 }, { 0,0 }, particle_gold);
+
+			particleMaster->spawnParticle({ 500,600 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 600,600 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 700,600 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 800,600 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 900,600 }, { 0,0 }, particle_gold);
+
+			particleMaster->spawnParticle({ 500,700 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 600,700 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 700,700 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 800,700 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 900,700 }, { 0,0 }, particle_gold);
+
+			particleMaster->spawnParticle({ 500,800 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 600,800 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 700,800 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 800,800 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 900,800 }, { 0,0 }, particle_gold);
+
+			particleMaster->spawnParticle({ 500,900 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 600,900 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 700,900 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 800,900 }, { 0,0 }, particle_gold);
+			particleMaster->spawnParticle({ 900,900 }, { 0,0 }, particle_gold);
+		}
+
 		//Check command list
 		computeFromCommandList();
 
@@ -445,6 +576,7 @@ private:
 		//If there is a current burst
 		if (currentBurst >= 0) {
 			burstWindSpeed.angle = windBursts[currentBurst].angle;
+			cout << "todo burst" << endl;
 			if (burstWindSpeed.magnitude < windBursts[currentBurst].magnitude) {
 				burstWindSpeed.magnitude += 0.1f * windBursts[currentBurst].magnitude;
 			}
@@ -522,11 +654,8 @@ private:
 
 		//update enemies
 		enemyEntities.lock();
-		if (enemyEntities.size() > 1) {
-			cout << "WHAT" << endl;
-		}
 		for (auto i : enemyEntities.getEntList()) {
-			pullBack = i->update(player->getPosition(), &BulletMasterTemplatePool);
+			pullBack = i->update(player->getPosition(), &BulletMasterTemplatePool, &totalSpawnerList);
 			//If bullets were pulled, chuck it on the master list
 			if (pullBack.size()) {
 				for (auto j : pullBack) {
@@ -536,6 +665,8 @@ private:
 		}
 		enemyEntities.unlock();
 		enemyEntities.cleanDeathFlags();
+		enemyEntities.pushToRenderBuffer(shift);
+		totalSpawnerList.cleanDeathFlags();
 		
 		totalBulletList.lock();
 		for (auto i : totalBulletList.getEntList()) {
@@ -693,6 +824,14 @@ private:
 		weatherEffectManager->drawMiddleWeather(lightMaster, shift, lightMaster->getObjectRenderBrightness(1));
 		weatherMasterLock.unlock();
 
+		totalSpawnerList.lock();
+		for (auto i : totalSpawnerList.getEntList()) {
+			if (i->getMaskLayer() == 2) {
+				boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			}
+		}
+		totalSpawnerList.unlock();
+
 		//Draw player bullets
 		boxCountRunningTotal += playerBullets.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 
@@ -716,25 +855,36 @@ private:
 		else if ((cycle %10) <5 ) {
 			boxCountRunningTotal += drawBoxEntity(player->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 		}
-		
 		player->unlock();
 
 		//Draw enemy bullets
 		boxCountRunningTotal += totalBulletList.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
-		
-		//Draw Enemies
-		enemyEntities.lock();
-		for (auto i : enemyEntities.getEntList()) {
-			boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+
+		totalSpawnerList.lock();
+		for (auto i : totalSpawnerList.getEntList()) {
+			if (i->getMaskLayer() == 1) {
+				boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			}
 		}
-		enemyEntities.unlock();
+		totalSpawnerList.unlock();
+
+		//Draw Enemies
+		boxCountRunningTotal += enemyEntities.render(graphicsState, shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
 
 		lightMaster->lock();
 		lightMaster->drawLightLevel(2);
 		lightMaster->unlock();
 
+		totalSpawnerList.lock();
+		for (auto i : totalSpawnerList.getEntList()) {
+			if (i->getMaskLayer() == 0) {
+				boxCountRunningTotal += drawBoxEntity(i->renderCopy(shift), shift, lightMaster->getObjectRenderBrightness(1), FULLSIZE);
+			}
+		}
+		totalSpawnerList.unlock();
+
 		//Draw particles
-//		particleMaster->renderParticles(shift);
+		particleMaster->renderParticles(shift);
 
 		//Draw float text
 		floatTextMaster->renderText(shift + 220);
@@ -754,14 +904,7 @@ private:
 		lightMaster->drawLightLevel(3);
 		lightMaster->unlock();
 
-		//Draw overlay
-		SDL_RenderCopy(graphicsState->getGRenderer(), overlay, NULL, NULL);
-
-		//draw ui text
-		uiTextMaster->renderText(0);
-
-		//Draw dialogue
-		dialogue->drawDialogue();
+		drawUI();
 	}
 };
 

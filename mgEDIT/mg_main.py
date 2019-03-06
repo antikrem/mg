@@ -3,6 +3,7 @@ from mg_cus_struct import *
 from mg_popup import *
 from mg_methods import *
 from mg_animation import *
+from mg_view_frame import *
 
 #Main class, stores level state
 class main :
@@ -11,14 +12,19 @@ class main :
         self._campaign = None
         self._level = None
         self._playerPosition = CUS_Point(0,0)
+
+        #specifies if in enemy list mode or bullet master mode
+        self._bulletMasterListMode = False
         
         #The specific commander that shows on window
         self._commanderInFocus = None
 
         #Animation set
         self._animations = dict()
+        self._bulletMasterListNames = []
         self._currentEnemies = []
         self._currentBullets = []
+        self._bulletTemplates = dict()
         #reference to frame canvas elements, for easy clear from clearCanvas()
         self._frameCanvasElements = []
 
@@ -69,7 +75,7 @@ class main :
         #create a window for slider
         self._windows["slider_bar"] = tk.Toplevel(self._root)
         self._windows["slider_bar"].title("Cycle Controller")
-        self._windows["slider_bar"].geometry("%dx%d+0+%d" % (1910 * self._scale, 50 * self._scale, 912 * self._scale + 30))
+        self._windows["slider_bar"].geometry("%dx%d+0+%d" % (1910 * self._scale, 80 * self._scale, 912 * self._scale + 30))
         self._windows["slider_bar"].slider = tk.Scale(self._windows["slider_bar"], from_=0, to=self._maxCycles, orient=tk.HORIZONTAL, length = self._scale * 1750, resolution=(0.00333333333), command=self.sliderUpdateHandle)
         self._windows["slider_bar"].slider.pack(side = tk.LEFT)
         #Buttons on the slider window
@@ -96,6 +102,8 @@ class main :
         self._windows["level_load"].newButton.grid( column = 3, row = 1, sticky = tk.N+tk.E+tk.W+tk.S)
         self._windows["level_load"].spawnEnemyButton = tk.Button(self._windows["level_load"], text = "Spawn at \n Position", command=self.spawnHandle)
         self._windows["level_load"].spawnEnemyButton.grid( column = 1, row = 2, sticky = tk.N+tk.E+tk.W+tk.S)
+        self._windows["level_load"].switchWindowButton = tk.Button(self._windows["level_load"], text = "Switch To \n BULLET MASTER \n View", command=self.switchToBulletMasterView)
+        self._windows["level_load"].switchWindowButton.grid( column = 0, row = 3, sticky = tk.N+tk.E+tk.W+tk.S)
         #Information frame on level load that stores information
         self._windows["level_load"].infoFrame = tk.Frame(self._windows["level_load"], height = 83 * self._scale, bg = "blue")  
         self._windows["level_load"].infoFrame.grid(column = 1, row = 3, columnspan = 3, sticky=tk.N+tk.E+tk.S+tk.W)
@@ -138,9 +146,15 @@ class main :
         self.enemyListUpdate()
         print("done loading")
 
+    def switchToBulletMasterView(self) :
+        self._bulletMasterListMode = not self._bulletMasterListMode
+        self._windows["level_load"].switchWindowButton["text"] = "Switch To \n %s \n View" % ("ENEMY LEVEL" if self._bulletMasterListMode else "BULLET MASTER")
+        self.enemyListUpdate()
+
     #saves current level state to file
     def saveHandle(self) :
         saveEnemiesToFile(self, self._currentEnemies)
+        saveBulletMastersToFile(self, self._bulletTemplates)
 
     def drawCanvasForFrame(self) :
         currentCycle = self._currentCycle
@@ -165,6 +179,16 @@ class main :
                     image = frameList[(self._currentCycle-ent._spawningCycle)%len(frameList)]
                     toPush = self._windows["level_view"].create_image( (x + 100)*self._gameScale, (y + 100)*self._gameScale, image = image)
                     self._frameCanvasElements.append(toPush)
+            if ent._bulletMasterDirect is not None :
+                for spawner in ent._bulletMasterDirect._bulletSpawners :
+                    if spawner._seenCycle <= currentCycle and (spawner._deathCycle + spawner._spawningCycle) and spawner._maskName is not "" > currentCycle :
+                        x = spawner.pullPositionAtCycle(currentCycle)._x
+                        y = spawner.pullPositionAtCycle(currentCycle)._y
+                        frameList = self._animations[spawner._maskName].getAnimation("idle")._drawFrames
+                        image = frameList[(self._currentCycle-spawner._spawningCycle)%len(frameList)]
+                        toPush = self._windows["level_view"].create_image( (x + 100)*self._gameScale, (y + 100)*self._gameScale, image = image)
+                        self._frameCanvasElements.append(toPush)
+                    
 
         for ent in self._currentBullets :
             if ent._spawningCycle <= currentCycle and (ent._deathCycle + ent._spawningCycle) > currentCycle :
@@ -176,14 +200,19 @@ class main :
                     toPush = self._windows["level_view"].create_image( (x + 100)*self._gameScale, (y + 100)*self._gameScale, image = image)
                     self._frameCanvasElements.append(toPush)
 
-            
+    def updateAllEnemiesBM(self) :
+        print("update")
+        self._currentBullets.clear()
+        for enemy in self._currentEnemies :
+            self._currentBullets.extend(enemy.calculateBulletMaster(self._bulletTemplates, self))
+        self.drawCanvasForFrame()
 
     def spawnHandle(self) :
         pop = PopEnemy(self)
         self._root.wait_window(pop._window)
         if pop.valid :
             enemy = pop.value
-            enemy.calculatePositions(self, self._playerPosition)
+            enemy.calculatePositions(self, self._playerPosition, None, None)
             self._currentEnemies.append(enemy)
             self.enemyListUpdate()
         else :
@@ -193,26 +222,40 @@ class main :
         self._currentCycle = int(300* self._windows["slider_bar"].slider.get())
         self.drawCanvasForFrame()
         print(self._currentCycle)
+        if self._windows["commander"].frame is not None :
+            self._windows["commander"].frame.updateOnSlide(self._currentCycle)
+        else :
+            print("none")
         
     def updateCampaignLevelLabel(self) :
         if self._campaign is not None :
             self._windows["level_load"].infoFrame.infoCampaignValueLabel['text'] ="Campaign: %s" % (self._campaign)
         if self._level is not None :
             self._windows["level_load"].infoFrame.infoLevelValueLabel['text'] ="Level: %d" % (self._level)
+
     def enemyListUpdate(self) :
-        self._currentEnemies.sort(key=enemySort)
-        self._windows["level_load"].listBox.delete(0, tk.END)
-        counter = 0
-        for enemy in self._currentEnemies :
-            counter += 1
-            deadFail = ""
-            deadWin = ""
-            if not enemy._deathInitialised :
-                deadFail = " (No Death Cycle)"
-            else :
-                deadWin = " to " + '%.3f' %((enemy._deathCycle + enemy._spawningCycle)/300 ) + " "
-            self._windows["level_load"].listBox.insert(tk.END, str(counter) + " @ " + str(enemy._spawningCycle/300) + deadWin + " w\ " + enemy._animationName + deadFail)
-        
+        if not self._bulletMasterListMode :
+            self._currentEnemies.sort(key=enemySort)
+            self._windows["level_load"].listBox.delete(0, tk.END)
+            counter = 0
+            for enemy in self._currentEnemies :
+                counter += 1
+                deadFail = ""
+                deadWin = ""
+                if not enemy._deathInitialised :
+                    deadFail = " (No Death Cycle)"
+                else :
+                    deadWin = " to " + '%.3f' %((enemy._deathCycle + enemy._spawningCycle)/300 ) + " "
+                self._windows["level_load"].listBox.insert(tk.END, str(counter) + " @ " + str(enemy._spawningCycle/300) + deadWin + " w\ " + enemy._animationName + deadFail)
+
+        else :
+            self._windows["level_load"].listBox.delete(0, tk.END)
+            self._bulletMasterListNames.clear()
+            for template in self._bulletTemplates :
+                second = self._bulletTemplates[template]
+                self._bulletMasterListNames.append(template)
+                self._windows["level_load"].listBox.insert(tk.END, second._name + " w\ " + str(len(second._bulletSpawnerTemplates)) + " spawner(s)" )        
+
     def bindEvents(self) :
         self._windows["level_view"].bind("<Button-1>", self.clickHandler)
         self._windows["level_view"].bind("<B1-Motion>", self.clickHandler)
@@ -220,17 +263,28 @@ class main :
 
     #sets command view on the following object
     def focusOnCommander(self, commander) :
+        for i in self._currentEnemies :
+            print("hi")
         if self._windows["commander"].frame is not None :
             self._windows["commander"].frame.destroy()
         self._windows["commander"].frame = MovementCommanderFrame(self, commander)
+        self._windows["commander"].frame.pack_propagate(False)
+        self._windows["commander"].frame.pack()
+
+    def focusOnMaster(self, master) :
+        if self._windows["commander"].frame is not None :
+            self._windows["commander"].frame.destroy()
+        self._windows["commander"].frame = BulletMasterFrame(self, master)
         self._windows["commander"].frame.pack_propagate(False)
         self._windows["commander"].frame.pack()
             
     def focusHandler(self, event) :
         if (event.widget.curselection() == ()) :
             self.focusOnCommander(None)
-        else :
+        elif not self._bulletMasterListMode :
             self.focusOnCommander(self._currentEnemies[event.widget.curselection()[0]])
+        else :
+            self.focusOnMaster(self._bulletTemplates[self._bulletMasterListNames[event.widget.curselection()[0]]])
     
     def mainloop(self) :
         self._animations.update(loadAnimations(self._pathToMaster + "assets\\", "load_list.txt", ImageLevel.GLOBAL, self))

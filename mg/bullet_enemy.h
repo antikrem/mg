@@ -10,16 +10,14 @@
 class BulletTemplate {
 public:
 	string animationName;
-	float hitbox;
+	float hitbox = 0;
 	map <int, MovementCommand> movementList;
 	CUS_Polar initialVelocity = { 0, 0 };
-	//Relative is false by default
-	vector<int> flipRelativeTrue;
-	vector<int> flipRelativeFalse;
 
-	BulletTemplate(string animationName, CUS_Polar initialVelocity) {
+	BulletTemplate(string animationName, CUS_Polar initialVelocity, float hitbox) {
 		this->animationName = animationName;
 		this->initialVelocity = initialVelocity;
+		this->hitbox = hitbox;
 	}
 
 	void addMovementCommand(int cycle, MovementCommand movementCommand) {
@@ -54,6 +52,12 @@ public:
 	//If -1, sprays will go until master is dead, otherwise it will only do this many volleys
 	int rounds = -1;
 
+	//Animation Mask for spawner, null will not be drawn
+	string bulletMaskName = "";
+	//If 0 covers enemy, 1 is behind enemy, 2 is behind bullets
+	int layer = 0;
+
+	//Template this spawner will spawn
 	BulletTemplate* bulletTemplate = NULL;
 
 	BulletSpawnerTemplate(CUS_Point initialPosition, CUS_Polar initialVelocity) {
@@ -87,6 +91,11 @@ public:
 
 	void addMovementCommand(int cycle, MovementCommand movementCommand) {
 		movementList[cycle] = movementCommand;
+	}
+
+	void setAnimationMask(string bulletMaskName, int layer) {
+		this->layer = layer;
+		this->bulletMaskName = bulletMaskName;
 	}
 };
 
@@ -170,6 +179,8 @@ private:
 	int currentRound = 0;
 	int rounds = -1;
 
+	//If layer is -1 then do not draw anything
+	int layer = -1;
 
 public:
 
@@ -194,6 +205,17 @@ public:
 		for (auto entry : bulletSpawnerTemplate->exitLocations) {
 			exitLocations.push_back(entry);
 		}
+
+		//Masks
+		if (bulletSpawnerTemplate->bulletMaskName != "") {
+			setAnimationSet(getFromStore(bulletSpawnerTemplate->bulletMaskName));
+			layer = bulletSpawnerTemplate->layer;
+		}
+		else {
+			layer = -1;
+		}
+		updateBox();
+		itCurrentFrame();
 	}
 
 	/*Returns either empty vector, 
@@ -241,7 +263,13 @@ public:
 			}
 		}
 		
+		updateBox();
+		itCurrentFrame();
 		return returnList;
+	}
+
+	int getMaskLayer() {
+		return layer;
 	}
 
 };
@@ -249,23 +277,26 @@ public:
 class BulletMaster {
 private:
 	string name;
-	vector<BulletSpawner*> bulletSpawners;
-
 	SharedEntityList<Bullet> bulletList;
+	SharedEntityList<BulletSpawner> bulletSpawners;
 public:
 
 	BulletMaster(BulletMasterTemplate* bulletMasterTemplate, CUS_Point enemyPosition) {
 		this->name = bulletMasterTemplate->name;
 
 		for (auto spawnerTemplate : bulletMasterTemplate->bulletSpawnerTemplates) {
-			bulletSpawners.push_back(new BulletSpawner(spawnerTemplate, enemyPosition));
+			bulletSpawners.pushObject(new BulletSpawner(spawnerTemplate, enemyPosition));
 		}
+	}
+
+	~BulletMaster() {
+		bulletSpawners.deepClear();
 	}
 
 	vector<shared_ptr<Bullet>> update(CUS_Point playerPosition, CUS_Point enemyPosition) {
 		vector<shared_ptr<Bullet>> newBullets;
 		
-		for (auto spawner : bulletSpawners) {
+		for (auto spawner : bulletSpawners.getEntList()) {
 			auto bullets = spawner->update(playerPosition, enemyPosition);
 			if (bullets.size()) {
 				for (auto bullet : bullets) {
@@ -273,10 +304,19 @@ public:
 				}
 			}
 		}
+		bulletSpawners.cleanDeathFlags();
+		bulletList.cleanDeathFlags();
 
 		return newBullets;
 	}
 
+	void addToMasterBulletSpawnerList(SharedEntityList<BulletSpawner>* in) {
+		for (auto i : bulletSpawners.getEntList()) {
+			in->pushObject(i);
+		}
+	}
+
+	
 };
 
 enum BTModes {
@@ -359,6 +399,11 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 				}
 			}
 		}
+		else if (lineVec[0] == "SPRITEMASK") {
+			if (mode == bst) {
+				bstToPull->setAnimationMask(lineVec[1], stoi(lineVec[2]));
+			}
+		}
 		else if (lineVec[0] == "EXIT") {
 			if (bstToPull) {
 				if (mode == bst) {
@@ -369,10 +414,15 @@ static void pullBMT(map<string, BulletMasterTemplate*>* bmtList, LevelSettings* 
 			}
 		}
 		else if (lineVec[0] == "BULLET") {
-			if (lineVec.size() == 4) {
+			if (lineVec.size() == 5) {
 				mode = bt;
-				btToPull = new BulletTemplate(lineVec[1], { stof(lineVec[2]),  stof(lineVec[3]) }); //Animation name
-			} 
+				btToPull = new BulletTemplate(lineVec[1], { stof(lineVec[2]),  stof(lineVec[3]) }, stof(lineVec[4])); //Animation_name, { vx, vy }, hitbox
+			}
+			else if (lineVec.size() == 2) {
+				if (lineVec[1] == "NONE") {
+					btToPull = NULL;
+				}
+			}
 			else {
 				cout << "BULLET size check TODO";
 			}

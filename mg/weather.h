@@ -4,8 +4,9 @@ Also can do lightning, which i guess is cool*/
 #define __WEATHER_H__
 
 #define HORIZONTAL_SKEW F(0.1)
-#define ABOVE_SCALE F(1.5)
-#define BELOW_SCALE F(0.7)
+#define ABOVE_SCALE F(0.9)
+#define MIDDLE_SCALE F(0.7)
+#define BELOW_SCALE F(0.5)
 
 #define WEATHER_DARK_TRANSITION F(0.004)
 
@@ -77,11 +78,11 @@ public:
 			}
 		}
 
-		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(baseSize.x / 2 + random::randomFloat(-20, 20))) {
-			for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(baseSize.y / 2 + random::randomFloat(-20, 20))) {
+		for (float i = F(-baseSize.x / 2); i < F(WORK_SPACE_X + baseSize.x / 2); i += F(MIDDLE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
+			for (float j = F(-baseSize.y / 2); j < F(WORK_SPACE_Y + baseSize.y / 2); j += F(MIDDLE_SCALE * baseSize.y / 2 + random::randomFloat(-20, 20))) {
 				effect.position = { i, j };
-				effect.scale = random::randomFloat(F(0.95), F(1));
-				effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+				effect.scale = MIDDLE_SCALE * random::randomFloat(F(0.95), F(1));
+				effect.verticalskew = MIDDLE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
 				effect.frameNumber = random::randomInt(0, 1);
 				weatherEffectsMiddle.push_back(effect);
 			}
@@ -272,12 +273,12 @@ public:
 			CUS_Point newPos;
 			for (unsigned int i = 0; i < weatherEffectsMiddle.size(); i++) {
 				CUS_Point oldPos = weatherEffectsMiddle[i].position;
-				weatherEffectsMiddle[i].position.x += windspeed.toPoint().x;
-				weatherEffectsMiddle[i].position.y += windspeed.toPoint().y;
-				weatherEffectsMiddle[i].position.y += 10;
-				weatherEffectsMiddle[i].position.x += weatherEffectsMiddle[i].verticalskew;
+				weatherEffectsMiddle[i].position.x += MIDDLE_SCALE * windspeed.toPoint().x;
+				weatherEffectsMiddle[i].position.y += MIDDLE_SCALE * windspeed.toPoint().y;
+				weatherEffectsMiddle[i].position.y += MIDDLE_SCALE * 10;
+				weatherEffectsMiddle[i].position.x += MIDDLE_SCALE * weatherEffectsMiddle[i].verticalskew;
 				newPos = weatherEffectsMiddle[i].position;
-				newPos.x += velocityShift;
+				newPos.x += MIDDLE_SCALE * velocityShift;
 				weatherEffectsMiddle[i].angle = -1 * newPos.getAngleToPoint(oldPos);
 			}
 
@@ -286,45 +287,49 @@ public:
 
 			if (weatherType == rain) {
 				//If drifted out too far to the right
-				if (totalDriftMiddle.x > baseSize.x / 2) {
+				if (totalDriftMiddle.x > MIDDLE_SCALE * baseSize.x / 2) {
 					totalDriftMiddle.x = 0;
 					WeatherEffect effect;
-					for (float j = F(-baseSize.y / 2); j < (WORK_SPACE_Y + baseSize.y / 2); j += (baseSize.y / 2 + random::randomFloat(-20, 20))) {
-						effect.position = { F(-baseSize.x / 2), j };
-						effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+					for (float j = F(-baseSize.y / 2); j < (WORK_SPACE_Y + baseSize.y / 2); j += (MIDDLE_SCALE * baseSize.y / 2 + random::randomFloat(-20, 20))) {
+						effect.position = { F(MIDDLE_SCALE * -baseSize.x / 2), j };
+						effect.verticalskew = MIDDLE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+						effect.scale = MIDDLE_SCALE * random::randomFloat(F(0.95), F(1));
 						weatherEffectsMiddle.push_back(effect);
 					}
 				}
 
 				//If drifted out too far to the left
-				if (totalDriftMiddle.x < -baseSize.x / 2) {
+				if (totalDriftMiddle.x < MIDDLE_SCALE * -baseSize.x / 2) {
 					totalDriftMiddle.x = 0;
 					WeatherEffect effect;
-					for (float j = F(-baseSize.y / 2); j < (WORK_SPACE_Y + baseSize.y / 2); j += (baseSize.y / 2 + random::randomFloat(-20, 20))) {
-						effect.position = { F(WORK_SPACE_X + baseSize.x / 2), j };
-						effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+					for (float j = F(-baseSize.y / 2); j < (WORK_SPACE_Y + baseSize.y / 2); j += (MIDDLE_SCALE * baseSize.y / 2 + random::randomFloat(-20, 20))) {
+						effect.position = { F(MIDDLE_SCALE * WORK_SPACE_X + baseSize.x / 2), j };
+						effect.verticalskew = MIDDLE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+						effect.scale = MIDDLE_SCALE * random::randomFloat(F(0.95), F(1));
 						weatherEffectsMiddle.push_back(effect);
 					}
 				}
 
 				//If drifted out too far down
-				if (totalDriftMiddle.y > baseSize.y / 2) {
+				if (totalDriftMiddle.y > MIDDLE_SCALE * baseSize.y / 2) {
 					totalDriftMiddle.y = 0;
 					WeatherEffect effect;
-					for (float i = F(-baseSize.x / 2) + random::randomFloat(F(0), F(baseSize.x / 2)); i < (WORK_SPACE_X + baseSize.x / 2); i += (baseSize.x / 2 + random::randomFloat(-20, 20))) {
-						effect.position = { i, F(-baseSize.y / 2) };
-						effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+					for (float i = F(-baseSize.x / 2) + random::randomFloat(F(0), F(baseSize.x / 2)); i < (WORK_SPACE_X + baseSize.x / 2); i += (MIDDLE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
+						effect.position = { i, F(MIDDLE_SCALE * -baseSize.y / 2) };
+						effect.verticalskew = MIDDLE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+						effect.scale = MIDDLE_SCALE * random::randomFloat(F(0.95), F(1));
 						weatherEffectsMiddle.push_back(effect);
 					}
 				}
 
 				//If drifted out too far up
-				if (totalDriftMiddle.y < -baseSize.y / 2) {
+				if (totalDriftMiddle.y < MIDDLE_SCALE * -baseSize.y / 2) {
 					totalDriftMiddle.y = 0;
 					WeatherEffect effect;
-					for (float i = F(-baseSize.x) / 2; i < (WORK_SPACE_X + baseSize.x / 2); i += (baseSize.x / 2 + random::randomFloat(-20, 20))) {
-						effect.position = { i, F(WORK_SPACE_Y + -baseSize.y / 2) };
-						effect.verticalskew = random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+					for (float i = F(-baseSize.x) / 2; i < (WORK_SPACE_X + baseSize.x / 2); i += (MIDDLE_SCALE * baseSize.x / 2 + random::randomFloat(-20, 20))) {
+						effect.position = { i, F(MIDDLE_SCALE * WORK_SPACE_Y + -baseSize.y / 2) };
+						effect.verticalskew = MIDDLE_SCALE * random::randomFloat(-1 * HORIZONTAL_SKEW, HORIZONTAL_SKEW);
+						effect.scale = MIDDLE_SCALE * random::randomFloat(F(0.95), F(1));
 						weatherEffectsMiddle.push_back(effect);
 					}
 				}
@@ -333,10 +338,10 @@ public:
 			//Clear passed effects
 			it = weatherEffectsMiddle.begin();
 			while (it != weatherEffectsMiddle.end()) {
-				if (it->position.x < -baseSize.x ||
-					it->position.x >(baseSize.x + WORK_SPACE_X) ||
-					it->position.y < -baseSize.y ||
-					it->position.y >(baseSize.y + WORK_SPACE_Y)
+				if (it->position.x < MIDDLE_SCALE * -baseSize.x ||
+					it->position.x >(MIDDLE_SCALE * baseSize.x + WORK_SPACE_X) ||
+					it->position.y < MIDDLE_SCALE * -baseSize.y ||
+					it->position.y >(MIDDLE_SCALE * baseSize.y + WORK_SPACE_Y)
 					) {
 					it = weatherEffectsMiddle.erase(it);
 				}

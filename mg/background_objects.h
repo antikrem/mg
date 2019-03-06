@@ -142,8 +142,10 @@ public:
 						err::logMessage("ERROR: " + filePath + "//background_objects.txt is corrupted at line: " + to_string(lineNo));
 					}
 				}
-				else
+				else {
 					err::logMessage("At line " + to_string(lineNo) + " in " + filePath + " has invalid ammount of parameters were paresed. Number of parameters are: " + to_string(lineVec.size()));
+				}
+					
 			}
 		inFile.close();
 	}

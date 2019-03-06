@@ -82,16 +82,18 @@ struct Particle {
 };
 
 //Used in the particle render buffer
-struct ParticleRender {
+struct ParticleBuffer {
 	ParticleType particleType;
 	//The identifier of the texture
 	int textureIdentifier;
 	CUS_Point position;
+	int frame;
 
-	ParticleRender(Particle* particle) {
+	ParticleBuffer(Particle* particle, int frame) {
 		this->particleType = particle->particleType;
 		this->textureIdentifier = particle->textureIdentifier;
 		this->position = particle->position;
+		this->frame = frame;
 	}
 };
 
@@ -406,26 +408,32 @@ public:
 	}
 
 	void renderParticles(int shift) {
+		vector<ParticleBuffer> particleRenderBuffer;
+
 		mainParticleLock.lock();
-		SDL_Rect src;
-		SDL_Rect dst;
 		int frame;
 		for (auto particle : mainParticleList) {
 			particle->particleLock.lock();
 			frame = particle->cycle / ANIMATION_FRAMES;
 			if (frame < particleTemplates[particle->particleType][particle->textureIdentifier].numberOfFrames) {
-				src = particleTemplates[particle->particleType][particle->textureIdentifier].getCurrentFrameRect(frame);
-				dst = particleTemplates[particle->particleType][particle->textureIdentifier].getRenderRect(particle->position);
-				dst.x += shift;
-
-				SDL_RenderCopy(graphicsState->getGRenderer(),
-					particleTemplates[particle->particleType][particle->textureIdentifier].particleSpriteSheet,
-					&src,
-					&dst);
+				particleRenderBuffer.push_back(ParticleBuffer(particle.get(), frame));
 			}
 			particle->particleLock.unlock();
 		}
 		mainParticleLock.unlock();
+
+		SDL_Rect src;
+		SDL_Rect dst;
+		for (auto particle : particleRenderBuffer) {
+			src = particleTemplates[particle.particleType][particle.textureIdentifier].getCurrentFrameRect(frame);
+			dst = particleTemplates[particle.particleType][particle.textureIdentifier].getRenderRect(particle.position);
+			dst.x += shift;
+
+			SDL_RenderCopy(graphicsState->getGRenderer(),
+				particleTemplates[particle.particleType][particle.textureIdentifier].particleSpriteSheet,
+				&src,
+				&dst);
+		}
 	}
 
 	/*Spawns a particle, which will start interacting*/

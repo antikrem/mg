@@ -154,6 +154,7 @@
     <ClInclude Include="particles.h" />
     <ClInclude Include="powerup.h" />
     <ClInclude Include="random.h" />
+    <ClInclude Include="script.h" />
     <ClInclude Include="sound.h" />
     <ClInclude Include="text_dialogue.h" />
     <ClInclude Include="thread_safe.h" />

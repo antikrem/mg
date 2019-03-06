@@ -136,11 +136,15 @@ def pullBulletMasterTemplatesFromFile(master) :
                     sprayTimer = []
                     for i in range(1, len(currentLine)) :
                         bstToPull.addExitLocation(float(currentLine[i]))
-                        
+
+            elif currentLine[0] == "SPRITEMASK" :
+                if mode == "bst" :
+                    bstToPull.addMask(currentLine[1], int(currentLine[2]))
+                
             elif currentLine[0] == "BULLET" :
                 mode = "bt"
                 velocity = CUS_Polar(float(currentLine[2]), float(currentLine[3]))
-                btToPull = BulletTemplate(currentLine[1], velocity)
+                btToPull = BulletTemplate(currentLine[1], velocity, float(currentLine[4]))
 
             elif currentLine[0] == "MOVE" :
                 currentUpdate = MovementCommand(
@@ -166,6 +170,52 @@ def pullBulletMasterTemplatesFromFile(master) :
     return masterDict
 
 
+def saveBulletMastersToFile(master, bulletMasters) :
+    path = master._pathToMaster + "//campaigns//" + master._campaign + "//" + str(master._level) + "//bullet_table.txt"
 
-        
-        
+    with open(path, "w+") as file :
+        print(len(bulletMasters))
+        for i in bulletMasters :
+            bulletMaster = bulletMasters[i]
+            file.write("BULLETMASTER %s\n"%(bulletMaster._name))
+            for spawner in bulletMaster._bulletSpawnerTemplates :
+                #bullet template
+                bullet = spawner._bulletTemplate
+                if bullet is not None :
+                    file.write("BULLET %s %f %f %f\n"%(bullet._animationName, bullet._initialVelocity._magnitude, bullet._initialVelocity._angle, bullet._hitbox))
+                    for j in bullet._movementList :
+                        command = bullet._movementList[j]
+                        file.write("MOVE %d %d %d %d %f %d %d %f\n"%(j,
+                                                                     int(command._ignoreAngle), int(command._forceAngle), int(command._relativeToPlayer), float(command._angle),
+                                                                     int(command._ignoreSpeed), int(command._forceSpeed), float(command._speed))
+                                   )
+                #bullet spawner
+                file.write("SPAWNER %f %f %f %f\n"%(
+                    spawner._initialPosition._x, spawner._initialPosition._y,
+                    spawner._initialVelocity._magnitude, spawner._initialVelocity._angle
+                    )
+                )
+                if len(spawner._sprayTimer) is not 0 :
+                    file.write("VOLLEYTIMER")
+                    for k in spawner._sprayTimer :
+                        file.write(" %d"%k)
+                    file.write('\n')
+                if spawner._inBetweenTimer is not 0 :
+                    file.write("BETWEENVOLLEYPAUSE %f\n"%spawner._inBetweenTime)
+                if spawner._rounds is not -1 :
+                    file.write("ROUNDS %d\n"%spawner._rounds)
+                if spawner._maskName is not "" :
+                    file.write("SPRITEMASK %s %d\n"%(spawner._maskName, spawner._maskLayer))
+                if len(spawner._sprayTimer) is not 0 :
+                    file.write("EXIT")
+                    for k in spawner._exitLocations :
+                        file.write(" %f"%k)
+                    file.write('\n')
+                for j in spawner._movementList :
+                    command = spawner._movementList[j]
+                    file.write("MOVE %d %d %d %d %f %d %d %f\n"%(j,
+                                                                 int(command._ignoreAngle), int(command._forceAngle), int(command._relativeToPlayer),
+                                                                 float(command._angle),
+                                                                 int(command._ignoreSpeed), int(command._forceSpeed), float(command._speed))
+                               )
+                file.write("\n")

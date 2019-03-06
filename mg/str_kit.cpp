@@ -1,4 +1,5 @@
 #include "str_kit.h"
+#include <iostream>
 
 vector<string> str_kit::splitOnToken(string line, char token) {
 	if (line.size()) {
@@ -29,7 +30,6 @@ bool str_kit::isADigit(string line) {
 	}
 	return true;
 }
-#include <iostream>
 
 string str_kit::convertToScoreString(float value, bool whole) {
 	string score;
@@ -46,5 +46,17 @@ string str_kit::convertToScoreString(float value, bool whole) {
 	score.append(".");
 	score.append( source.substr(source.find('.')+1, 2) );
 	return score + "%";
+}
 
+string str_kit::replaceToken(string str, string token, string replacement) {
+	string rstr = str;
+
+	size_t location = rstr.find(token);
+
+	while (location != string::npos) {
+		rstr.replace(location, token.size(), replacement);
+		location = rstr.find(token);
+	}
+
+	return rstr;
 }

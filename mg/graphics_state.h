@@ -105,4 +105,16 @@ public:
 	}
 };
 
+//Cleanly pull a texture from img, returns null on error
+static SDL_Texture* pullTextureFromPath(string path, GraphicsState* gState) {
+	SDL_Surface* surf = IMG_Load(path.c_str());
+	if (!surf) {
+		err::logMessage("A file is corrupted or missing, check " +path +", or reinstall");
+		return NULL;
+	}
+	auto text = SDL_CreateTextureFromSurface(gState->getGRenderer(), surf);
+	SDL_FreeSurface(surf);
+	return text;
+}
+
 #endif

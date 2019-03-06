@@ -14,71 +14,85 @@ static string returnLookUp(AnimationType type) {
 	return "idle";
 }
 
-void BoxEntity::updateBox() {
+void BoxEntity::updateBox(bool supressError) {
 	alpha += alphaGrowth;
 
-	if (!internalScale) {
-		visiblePosition_Entity.x = (int)position.x;
-		visiblePosition_Entity.y = (int)position.y;
-		visibleBound_Entity.w = animationSet->getAnimation(currentFrameType)->getWidth();
-		visibleBound_Entity.h = animationSet->getAnimation(currentFrameType)->getHeight();
-		visibleBound_Entity.x = visiblePosition_Entity.x - visibleBound_Entity.w / 2;
-		visibleBound_Entity.y = visiblePosition_Entity.y - visibleBound_Entity.h / 2;
+	if (animationSet != NULL) {
+		if (!internalScale) {
+			visiblePosition_Entity.x = (int)position.x;
+			visiblePosition_Entity.y = (int)position.y;
+			visibleBound_Entity.w = animationSet->getAnimation(currentFrameType)->getWidth();
+			visibleBound_Entity.h = animationSet->getAnimation(currentFrameType)->getHeight();
+			visibleBound_Entity.x = visiblePosition_Entity.x - visibleBound_Entity.w / 2;
+			visibleBound_Entity.y = visiblePosition_Entity.y - visibleBound_Entity.h / 2;
+		}
+		else {
+			visiblePosition_Entity.x = (int)position.x;
+			visiblePosition_Entity.y = (int)position.y;
+			visibleBound_Entity.w = (int)(animationSet->getAnimation(currentFrameType)->getWidth() * internalScale);
+			visibleBound_Entity.h = (int)(animationSet->getAnimation(currentFrameType)->getHeight() * internalScale);
+			visibleBound_Entity.x = visiblePosition_Entity.x - visibleBound_Entity.w / 2;
+			visibleBound_Entity.y = visiblePosition_Entity.y - visibleBound_Entity.h / 2;
+		}
 	}
-	else {
-		visiblePosition_Entity.x = (int)position.x;
-		visiblePosition_Entity.y = (int)position.y;
-		visibleBound_Entity.w = (int)(animationSet->getAnimation(currentFrameType)->getWidth() * internalScale);
-		visibleBound_Entity.h = (int)(animationSet->getAnimation(currentFrameType)->getHeight() * internalScale);
-		visibleBound_Entity.x = visiblePosition_Entity.x - visibleBound_Entity.w / 2;
-		visibleBound_Entity.y = visiblePosition_Entity.y - visibleBound_Entity.h / 2;
+	else if (!supressError) {
+		err::logMessage("line 39, b_e.cpp TODO");
 	}
-
 }
 
 void BoxEntity::itCurrentFrame() {
 	skippingFrame++;
+	if (animationSet == NULL)
+		return;
 	if (skippingFrame >= animationSet->getAnimation(currentFrameType)->getSkip()) {
 		skippingFrame = 0;
 		currentNumberFrame++;
 		if (currentNumberFrame >= animationSet->getAnimation(currentFrameType)->getTotalFrames()) {
 			animationPlayed = true;
-			playAnimation(backupFrameType);
+			currentFrameType = backupFrameType;
+			skippingFrame = 0;
+			currentNumberFrame = 0;
+			itCurrentFrame();
+			updateBox();
 		}
 	}
 }
 
-void BoxEntity::playAnimation(AnimationType newAnimation) {
+void BoxEntity::playAnimation(AnimationType newAnimation, bool suppress) {
 	if (animationSet->getAnimation(newAnimation) == NULL) {
-		currentFrameType = idle;
-		err::logMessage("playAnimation failed");
-		err::logMessage( returnLookUp(newAnimation) );
+		if not(suppress) {
+			currentFrameType = idle;
+			err::logMessage("playAnimation failed: no animation exists"); //TODO
+			err::logMessage(returnLookUp(newAnimation));
+		}
 	}
-	else {
+	else if (newAnimation != currentFrameType) {
 		currentFrameType = newAnimation;
+		skippingFrame = 0;
+		currentNumberFrame = 0;
+		itCurrentFrame();
+		updateBox();
 	}
-	skippingFrame = 0;
-	currentNumberFrame = 0;
-	updateBox();
 }
 
-void BoxEntity::switchAnimation(AnimationType newAnimation) {
+
+void BoxEntity::switchAnimation(AnimationType newAnimation, bool suppress) {
 	if (animationSet->getAnimation(newAnimation) == NULL) {
-		currentFrameType = idle;
-		err::logMessage("playAnimation failed: no annimation exists");
-		err::logMessage( returnLookUp(newAnimation) );
+		if not(suppress) {
+			currentFrameType = idle;
+			err::logMessage("switchAnimation failed: no animation exists");
+			err::logMessage(returnLookUp(newAnimation));
+		}
+		
 	}
-	else if (newAnimation == currentFrameType) {
-		pass;
-	} 
-	else {
+	else if (newAnimation != currentFrameType) {
 		currentFrameType = newAnimation;
 		backupFrameType = newAnimation;
 		skippingFrame = 0;
 		currentNumberFrame = 0;
+		itCurrentFrame();
+		updateBox();
 	}
-	itCurrentFrame();
-	updateBox();
 }
 
 void BoxEntity::setAnimationSet(AnimationAssignment* animation_map_param) {

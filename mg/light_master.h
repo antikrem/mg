@@ -118,7 +118,7 @@ public:
 	void lightningStrike() {
 		lightChangePause = 650;
 		lightLevelBrightnessSet(0, { -250.0f, -250.0f, -20.f, FULLNORMAL });
-		lightBrightnessSet(0, { 250.0f, 250.0f, 250.f });
+		lightBrightnessSet(0, { FULLNORMAL, 250.0f, 250.f });
 		playSound("strike0", SCLightning);
 	}
 
@@ -134,7 +134,7 @@ public:
 
 			if (lightMode == LMRain) {
 				lightBrightnessSet(0.5f, { FULLNORMAL, FULLNORMAL, FULLNORMAL });
-				lightLevelBrightnessSet(0.5f, { 90.0f, 80.0f, 50.0f, 70.0f });
+				lightLevelBrightnessSet(0.5f, { 90.0f, 80.0f, 50.0f, 90.0f });
 			}
 
 		}
