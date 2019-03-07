@@ -12,6 +12,7 @@
 #include "graphics_state.h"
 #include "text_entity.h"
 #include "str_kit.h"
+#include "script.h"
 
 /*Returns a string for WeatherType, for debug*/
 static string weather2String(int wt) {
@@ -179,10 +180,28 @@ void SlaveInstance::processCommand(string command, bool fromMaster) {
 	
 }
 
+void SlaveInstance::upperInterpret(string command, bool fromMaster) {
+	//todo: basic string formatting
+	vector<string> commands = mgscript::lowerInterpret(command);
+
+	//Iterate over commands derived
+	for (string i : commands) {
+		auto lineVec = str_kit::splitOnToken(i, ' ');
+		if (str_kit::isADigit(lineVec[0]) && (lineVec.size() > 1)) {
+			i.erase(i.begin());
+			commandList[stoi(lineVec[0])].push_back(str_kit::reconstituteVectorIntoString(lineVec, " ", 1));
+		}
+		else {
+			processCommand(i, true);
+		}
+		
+	}
+}
+
 void SlaveInstance::computeFromCommandList() {
 	if (commandList.count(counter)) {
 		for (auto command : commandList[counter]) {
-			processCommand(command, true);
+			upperInterpret(command, true);
 		}
 		commandList.erase(counter);
 	}
@@ -211,15 +230,8 @@ void SlaveInstance::loadCommandList() {
 		else if (lineVec.size() == 0) {
 			pass;
 		}
-		else if (str_kit::isADigit(lineVec[0]) && (lineVec.size() > 1)) {
-			string reconstruction;
-			for (unsigned int i = 1; i < lineVec.size(); i++)
-				reconstruction.append(lineVec[i] + " ");
-			reconstruction.pop_back();
-			commandList[stoi(lineVec[0])].push_back(reconstruction);
-		}
 		else {
-			processCommand(line, true);
+			upperInterpret(line, true);
 		}
 	}
 }
@@ -263,7 +275,7 @@ void SlaveInstance::consoleUpdate() {
 			//Check return, process console line
 			else if (freshInput == SDLK_RETURN) {
 				if (currentConsoleLine.size() > 0) {
-					processCommand(currentConsoleLine, false);
+					upperInterpret(currentConsoleLine, false);
 					updateConsoleView(true);
 					currentConsoleLine.clear();
 				}

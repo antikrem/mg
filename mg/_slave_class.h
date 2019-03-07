@@ -130,6 +130,9 @@ protected:
 	/*Takes a command and updates the gamestate*/
 	void processCommand(string command, bool fromMaster);
 
+	/*preprocessing and lower interpretation support*/
+	void upperInterpret(string command, bool fromMaster);
+
 	/*Checks command list,
 	computes if there are commands this cycle*/
 	void computeFromCommandList();

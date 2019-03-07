@@ -1,2 +1,32 @@
-LOG FILE FOR 2tick+1-INDEV INSTANCE RAN ON: Wed Mar  6 21:10:43 2019
+LOG FILE FOR 2tick+1-INDEV INSTANCE RAN ON: Thu Mar  7 23:11:26 2019
 
+Resolution: 1920 by 1080
+Fullscreen: 0
+vsync: 0
+Scan Codes loaded, parsed and updated
+444: but 1 pressed
+Warning: profile at assets\UI\in_game\character_profiles\sorceress.bmp is of deviant aspect ratio. Recommended aspect ratio is a scale of 170:208
+LEVEL STARTED WITH THE FOLLOWING SETTINGS:
+Level:1
+Player Index: 0
+
+1: INVALID COMMAND: [0] failed to parse in master: 0
+1: INVALID COMMAND: [1] failed to parse in master: 0
+2: INVALID COMMAND: [0] failed to parse in master: 1
+2: INVALID COMMAND: [1] failed to parse in master: 1
+50: Render push failed
+163: Render push failed
+180: Render push failed
+247: Render push failed
+259: Render push failed
+262: Render push failed
+302: Render push failed
+314: Render push failed
+384: Render push failed
+388: Render push failed
+422: Render push failed
+432: Render push failed
+471: Render push failed
+SAFELY EXITED AT: Thu Mar  7 23:11:33 2019
+
+Cycles waited:5

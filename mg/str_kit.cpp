@@ -1,4 +1,5 @@
 #include "str_kit.h"
+#include "constants.h"
 #include <iostream>
 
 vector<string> str_kit::splitOnToken(string line, char token) {
@@ -59,4 +60,26 @@ string str_kit::replaceToken(string str, string token, string replacement) {
 	}
 
 	return rstr;
+}
+
+string str_kit::reconstituteVectorIntoString(vector<string> input, string filler, int ignorePreceding) {
+	vector<string> temp = input;
+	if (ignorePreceding) {
+		for (int i = 0; i < ignorePreceding; i++) {
+			temp.erase(temp.begin());
+		}
+	}
+
+	string str;
+	bool flip = false;
+	for (auto i : temp) {
+		if not(flip)
+			flip = true;
+		else
+			str.append(filler);
+
+		str.append(i);
+	}
+
+	return str;
 }

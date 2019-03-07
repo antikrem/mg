@@ -21,6 +21,9 @@ namespace str_kit {
 	
 	/*Takes a string and replaces all instances token with insert */
 	string replaceToken(string str, string token, string replacement);
+
+	//Takes a vector of inputs, adds them together with a filler
+	string reconstituteVectorIntoString(vector<string> input, string filler, int ignorePreceding = 0);
 	
 }
 

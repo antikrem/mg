@@ -78,6 +78,8 @@ private:
 	PlayerEntity* player = NULL;
 	//Used for calculating shift of non-center points
 	CUS_Point playerTralingPosition;
+	//Used for ui calculations
+	atomic<float> playerPower = 0;
 
 	//Player Bullet list
 	SharedEntityList<PlayerBullet> playerBullets;
@@ -306,9 +308,7 @@ private:
 		SDL_RenderCopy(graphicsState->getGRenderer(), overlay, NULL, NULL);
 
 		//draw power circles
-		player->unlock();
-		float power = player->getPower();
-		player->lock();
+		float power = playerPower;
 
 		float baseRotationSpeed = power > 33 ? (power > 66 ? 2.0f : 1.0f) : 0.5f;
 		if (power > 33) {
@@ -612,6 +612,7 @@ private:
 		//update player
 		player->lock();
 		player->playerUpdate(getInput(), shift);
+		playerPower.store(player->getPower());
 		if (player->getRageResetFlag()) {
 			floatTextMaster->addTextEnt("", "RAGE RESET", player->getPosition(), 22, sansFontStyle, whiteFontColor, midMid, 0,
 				true, { (float) 2.1, (float)180 }, { (float) 0.012, (float)0 }, 400, 255, -(float)1.108);
